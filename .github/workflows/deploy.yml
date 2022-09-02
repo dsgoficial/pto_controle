@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        working-directory: ./wiki_pto_controle
       - uses: actions/setup-node@v3
         working-directory: ./wiki_pto_controle
         with:
