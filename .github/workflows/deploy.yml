@@ -17,13 +17,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
-        working-directory: ./wiki_pto_controle
         with:
           node-version: 18
           cache: npm
       - name: Install dependencies
+        working-directory: ./wiki_pto_controle
         run: npm ci
       - name: Build website
+        working-directory: ./wiki_pto_controle
         run: npm run build
 
       # Popular action to deploy to GitHub Pages:
