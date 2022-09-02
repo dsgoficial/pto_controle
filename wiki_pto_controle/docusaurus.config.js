@@ -8,8 +8,8 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Ponto de Controle',
   tagline: 'A Cartografia Documentada',
-  url: 'https://github.com',
-  baseUrl: '/dsgoficial/pto_controle/',
+  url: 'https://github.com/dsgoficial',
+  baseUrl: '/pto_controle/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
