@@ -1,0 +1,23 @@
+{
+    "validacao": {
+        "alt_max_ant" : 9,
+        "dur_min" : 20
+    },
+    "default": {
+        "modelo_gps" : "TRIMBLE 5700II",
+        "modelo_antena" : "TRM39105.00",
+        "tipo_ref" : 3,
+        "sistema_geodesico" : 2,
+        "referencial_altim" : 2,
+        "referencial_grav" : 97,
+        "orgao_executante" : "1° CGEO",
+        "projeto" : "Mapeamento de Interesse da Força",
+        "metodo_posicionamento" : 1,
+        "mascara_elevacao": 15,
+        "taxa_gravacao": 5,
+        "precisao_horizontal_esperada": 0.11,
+        "precisao_vertical_esperada": 0.18,
+        "cpf_engenheiro_responsavel": "010.517.103.40",
+        "engenheiro_responsavel": "Marcel Fernandes Gomes - 1º Ten QEM"
+    }
+}

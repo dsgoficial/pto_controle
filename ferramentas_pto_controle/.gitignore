@@ -1,0 +1,13 @@
+.vscode/
+help/
+test/
+Thumbs.db
+Desktop.ini
+__pycache__
+scripts/
+i18n/
+pylintrc
+pbtools.cfg
+Makefile
+testes.txt
+*.pyc

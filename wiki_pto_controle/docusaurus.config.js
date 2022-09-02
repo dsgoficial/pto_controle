@@ -8,8 +8,8 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Ponto de Controle',
   tagline: 'A Cartografia Documentada',
-  url: 'https://github.com/dsgoficial',
-  baseUrl: '/pto_controle/',
+  url: 'https://github.com',
+  baseUrl: '/dsgoficial/pto_controle/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
@@ -24,8 +24,8 @@ const config = {
   // metadata like html lang. For example, if your site is Chinese, you may want
   // to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+    defaultLocale: 'pt-BR',
+    locales: ['pt-BR'],
   },
 
   presets: [
@@ -60,6 +60,12 @@ const config = {
             docId: 'intro',
             position: 'left',
             label: 'Guia de Aplicação',
+          },
+          {
+            type: 'doc',
+            docId: 'erros_comuns/npm_proxy',
+            position: 'left',
+            label: 'Erros Comuns',
           },
         ],
       },
