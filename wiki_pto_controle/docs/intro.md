@@ -8,6 +8,7 @@ sidebar_position: 1
 Conforme a necessidade de armazenamento da coleta de Pontos de Controle, se fez necessário o desenvolvimento de rotinas que possibilitassem que a padronização das informações levantadas.  
 A uma demanda contínua por Pontos de Controle, principalmente para utilização em Controle de Qualidade, que requer o acesso rápido a pontos já levantados pelas OMDS/DSG.
 As rotinas que aqui serão descritas visam uniformizar os arquivos que são disponibilizados no BPC.
+Teste build
 
 ## Organograma Atual
 
