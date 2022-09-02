@@ -9,7 +9,7 @@ const config = {
   title: 'Ponto de Controle',
   tagline: 'A Cartografia Documentada',
   url: 'https://github.com/dsgoficial',
-  baseUrl: '/pto_controle/wiki_pto_controle/',
+  baseUrl: '/pto_controle/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
