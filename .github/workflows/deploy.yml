@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '.github/workflows/deploy.yml'
+      - 'wiki_pto_controle/**'
     # Review gh actions docs if you want to further define triggers, paths, etc
     # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#on
 
@@ -11,6 +14,8 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+    run:
+      working-directory: wiki_pto_controle
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
