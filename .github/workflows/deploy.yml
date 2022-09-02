@@ -14,8 +14,6 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    run:
-      working-directory: wiki_pto_controle
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
@@ -23,8 +21,10 @@ jobs:
           node-version: 18
           cache: npm
       - name: Install dependencies
+        working-directory: wiki_pto_controle
         run: npm ci
       - name: Build website
+        working-directory: wiki_pto_controle
         run: npm run build
 
       # Popular action to deploy to GitHub Pages:
