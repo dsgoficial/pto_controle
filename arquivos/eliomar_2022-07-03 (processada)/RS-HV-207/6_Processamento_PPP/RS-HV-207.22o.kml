@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<kml xmlns='http://earth.google.com/kml/2.2'>
+<Document>
+<name>RS-HV-207.22o.sum</name>
+<open>1</open>
+<Style id='sh_placemark_circle_highlight'>
+<IconStyle>
+<color>ffff5555</color>
+<scale>1.2</scale>
+<Icon>
+<href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle_highlight.png</href>
+</Icon>
+</IconStyle>
+</Style>
+<StyleMap id='msn_placemark_circle'>
+<Pair>
+<key>normal</key>
+<styleUrl>#sn_placemark_circle</styleUrl>
+</Pair>
+<Pair>
+<key>highlight</key>
+<styleUrl>#sh_placemark_circle_highlight0</styleUrl>
+</Pair>
+</StyleMap>
+<Style id='sh_placemark_circle_highlight0'>
+<IconStyle>
+<color>ffff5555</color>
+<scale>1.2</scale>
+<Icon>
+<href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle_highlight.png</href>
+</Icon>
+</IconStyle>
+<ListStyle>
+</ListStyle>
+</Style>
+<Style id='sn_placemark_circle'>
+<IconStyle>
+<color>ffff5555</color>
+<scale>1.2</scale>
+<Icon>
+<href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href>
+</Icon>
+</IconStyle>
+<ListStyle>
+</ListStyle>
+</Style>
+<Placemark>
+<name>RS-HV-207.22o.sum</name>
+<styleUrl> #msn_placemark_circle </styleUrl>
+<Point>
+<coordinates>-49.9254304999,-29.4562292777, 15.3876 </coordinates>
+</Point>
+</Placemark>
+</Document>
+</kml>

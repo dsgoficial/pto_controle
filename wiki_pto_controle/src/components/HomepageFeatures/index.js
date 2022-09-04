@@ -24,6 +24,7 @@ const FeatureList = [
   },
   {
     title: 'Exemplos',
+    link: 'docs/exemplos',
     description: (
       <>
         Acesso a uma pasta modelo, que contém os arquivos a serem processados no Guia de Aplicação.

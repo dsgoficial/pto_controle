@@ -2,6 +2,9 @@
 title: 'Preparar para PPP'
 sidebar_position: 5
 ---
+Preparação dos arquivos para PPP-IBGE.
 
-# Preparar para PPP
-Basta selecionar a pasta de acordo com o [link], dessa forma, será criado dentro de cada pasta uma nova pasta com o nome de "6_Processamento_PPP" e os arquivos RINEX processados da pasta "2_RINEX" serão colocados em um formato .zip
+# Execução
+Basta selecionar a pasta conforme [Validação da Estrutura de Pastas](/guia_pto_controle/validar_estrutura_pastas.md), dessa forma, será criado dentro de cada pasta:
+* Uma nova pasta com o nome de **"6_Processamento_PPP"**
+* Arquivos RINEX processados da pasta **"2_RINEX"** serão colocados em um formato .zip

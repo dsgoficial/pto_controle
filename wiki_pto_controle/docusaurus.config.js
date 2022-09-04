@@ -63,6 +63,18 @@ const config = {
           },
           {
             type: 'doc',
+            docId: 'manual_medidor',
+            position: 'left',
+            label: 'Manual do Medidor',
+          },
+          {
+            type: 'doc',
+            docId: 'exemplos',
+            position: 'left',
+            label: 'Exemplos',
+          },
+          {
+            type: 'doc',
             docId: 'erros_comuns/npm_proxy',
             position: 'left',
             label: 'Erros Comuns',
@@ -78,6 +90,10 @@ const config = {
               {
                 label: 'Guia de Aplicação',
                 to: '/docs/intro',
+              },
+              {
+                label: 'PPP-IBGE',
+                href: 'https://www.ibge.gov.br/geociencias/informacoes-sobre-posicionamento-geodesico/servicos-para-posicionamento-geodesico/16334-servico-online-para-pos-processamento-de-dados-gnss-ibge-ppp.html?=&t=o-que-e'
               },
             ],
           },

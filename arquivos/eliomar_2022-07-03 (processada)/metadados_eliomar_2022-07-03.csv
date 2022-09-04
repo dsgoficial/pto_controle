@@ -1,0 +1,5 @@
+"cod_ponto","medidor","data_rastreio","inicio_rastreio","fim_rastreio","materializado","altura_antena","tipo_medicao_altura","referencia_medicao_altura","altura_objeto","numero_serie_gps","numero_serie_antena","observacao"
+"RS-HV-207","Eliomar Lima Silveira Júnior","2022-07-03","09:05","09:53",0,"1.53",2,1,0,4906165579,60266723,
+"SC-HV-69","Eliomar Lima Silveira Júnior","2022-07-03","11:07","11:56",0,"2.3",2,1,0,4906165579,60266723,
+"SC-HV-72","Eliomar Lima Silveira Júnior","2022-07-03","12:42","13:30",0,"1.50",2,1,0,4906165579,60266723,
+"SC-HV-75","Eliomar Lima Silveira Júnior","2022-07-03","14:09","14:58",0,"1.56",2,1,0,4906165579,60266723,

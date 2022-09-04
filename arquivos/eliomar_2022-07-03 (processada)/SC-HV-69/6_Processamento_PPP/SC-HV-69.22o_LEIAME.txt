@@ -1,0 +1,40 @@
+   Obrigado por usar o IBGE-PPP!!
+
+O arquivo marcelgfernandes@gmail.com_SC-HV-69.zip_LIB_20220811151343.zip contem:
+
+SC-HV-69.22o.pdf - Resumo do relatorio em PDF.
+SC-HV-69.22o.sum - Relatorio do resultado (Contem as coordenadas do processamento estatico).
+SC-HV-69.22o.pos - Arquivo de posicao ao longo do tempo (Mais interessante para processamento cinematico).
+SC-HV-69.22o.kml - Arquivo Google Earth, apresentando o local do rastreio, se estatico, ou trajetoria, se cinematico. As coordenadas estao em SIRGAS e na epoca do levantamento.
+SC-HV-69.22o_LEIAME.txt - Este arquivo.
+SC-HV-69.22o.txt - Arquivo texto com os valores dos seguintes campos:
+
+PROCES -> data e hora do processamento
+RINEX  -> nome do arquivo de observacao no formato RINEX ou HATANAKA
+MARCO  -> identificacao do marco
+INICIO -> data e hora de inicio do rastreio
+FIM    -> data e hora fim do rastreio
+MODO   -> modo do processamento: estatico ou cinematico
+ANTENA -> modelo da antena
+ALTANT -> altura da antena
+INTERV -> taxa de rastreio das observacoes
+FREQ   -> frequencia processada: L1 ou L3 (L1&L2)
+OBSERV -> tipo de observacao: CODIGO&FASE ou CODIGO
+ORBITA -> tipo de orbita: FINAL, RAPIDA ou ULTRA-RAPIDA
+DATUM  -> referencial das coordenadas: SIRGAS2000, epoca 2000.4
+LAT    -> latitude em grau, minuto e segundo, epoca 2000.4
+LON    -> longitude em grau, minuto e segundo, epoca 2000.4
+HGEO   -> altitude geometrica em metros
+SLAT   -> sigma (95%) da latitude em metros
+SLON   -> sigma (95%) da longitude em metros
+SHGEO  -> sigma (95%) da altitude em metros
+UTMN   -> coordenada UTM em norte
+UTME   -> coordenada UTM em leste
+MC     -> meridiano central
+MODELO -> modelo de conversao de altitude: hgeoHNOR_IMBITUBA, hgeoHNOR_SANTANA ou MAPGEO2015
+FATCOR -> fator de correcao do modelo hgeoHNOR utilizado
+INCERT -> incerteza do modelo hgeoHNOR utilizado
+HNOR   -> altitude normal em metros se hgeoHNOR for utilizado
+ONDGEO -> ondulacao geoidal determinada pelo modelo MAPGEO2015 quando utilizado
+HORT   -> altitude ortometrica em metros se MAPGEO2015 for utilizado
+
