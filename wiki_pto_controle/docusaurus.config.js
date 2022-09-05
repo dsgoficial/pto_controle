@@ -6,7 +6,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Ponto de Controle',
+  title: 'Organização de Pontos de Controle',
   tagline: 'A Cartografia Documentada',
   url: 'https://github.com/dsgoficial',
   baseUrl: '/pto_controle/',
@@ -75,7 +75,7 @@ const config = {
           },
           {
             type: 'doc',
-            docId: 'erros_comuns/npm_proxy',
+            docId: 'problemas-comuns',
             position: 'left',
             label: 'Erros Comuns',
           },
@@ -104,10 +104,6 @@ const config = {
                 label: 'DSG',
                 href: 'http://www.dsg.eb.mil.br/',
               },
-              {
-                label: '1º CGEO',
-                href: 'http://www.1cgeo.eb.mil.br/',
-              },
             ],
           },
           {
@@ -115,12 +111,12 @@ const config = {
             items: [
               {
                 label: 'GitHub',
-                href: 'https://github.com/1cgeo',
+                href: 'https://github.com/dsgoficial',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} DGEO - 1º CGEO. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Diretoria de Serviço Geográfico. Built with Docusaurus.`,
       },
       prism: {
         theme: lightCodeTheme,

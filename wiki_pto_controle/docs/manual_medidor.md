@@ -12,7 +12,7 @@ Durante a coleta de pontos, o medidor deve possuir o conhecimento necessário pa
 ## Preenchimento do .csv
 * O .csv é um formato padrão de preenchimento, apenas as informações previstas devem ir no .csv, as demais são preenchidas pelo gerente da equipe no arquivo .json
 ```
-* cod_ponto: não devem existir 0 na frente do nome do ponto, o padrão seguido pelo 1º CGEO é: UF-HV-XXXX, sendo XXXX um número de 4 digitos
+* cod_ponto: não devem existir 0 na frente do nome do ponto, o padrão seguido é: UF-HV-XXXX, sendo XXXX um número de 4 digitos
 * medidor: nome completo do medidor
 * data_rastreio: no formato YYYY-MM-DD
 * inicio_rastreio: no formato HH:MM
@@ -47,7 +47,7 @@ Número de série do GPS | numero_serie_gps | Ex: 293441023
 Número de série da antena | numero_serie_antena | Ex: 039441923
 
 ## Demais informações
-* Nas informações de **inicio_rastreio** e *fim_rastreio** devem ser informados o momento que o aparelho foi ligado e não o momento que ele começou a rastrear, bem como no fim do rastreio, deve ser informado o momento que o aparelho foi desligado. Cabe ao medidor medir o tempo úlil de rastreio, que varia de acordo com o aparelho utilizado.
+* Nas informações de **inicio_rastreio** e **fim_rastreio** devem ser informados o momento que o aparelho foi ligado e não o momento que ele começou a rastrear, bem como no fim do rastreio, deve ser informado o momento que o aparelho foi desligado. Cabe ao medidor medir o tempo úlil de rastreio, que varia de acordo com o aparelho utilizado.
 * O arquivo bruto oriundo do aparelho, .t01 para TRIMBLE e .tps para a Topcon, deve possuir o mesmo nome do cod_ponto
 * A codificação da pasta deve seguir a estrutura: nomemedidor_AAAA_MM_DD e dentro dessa pasta se colocam os pontos medidos, seguindo a estrutura dos nomes do cod_ponto
 * O croqui deve ser salvo no formato .jpg e na orientação retrato

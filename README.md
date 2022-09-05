@@ -12,10 +12,11 @@ Acessada através desse [link](https://dsgoficial.github.io/pto_controle/).
 
 Pasta que contém arquivos relacionados aos [Exemplos](https://dsgoficial.github.io/pto_controle/docs/exemplos).
 
-## Rotinas Complementares (rotinas_complementares_pto_controle)
-
-Utilizadas pelo usuário fora do QGIS, fazendo parte do processo de geração dos arquivos para o BPC.
-
 ## Rotinas Ponto de Controle (pto_controle)
 
 Utilizadas pelo usuário em conjunto com o QGIS.
+
+## Rotinas Complementares (rotinas_complementares_pto_controle)
+
+Utilizadas pelo usuário fora do QGIS, fazendo parte do processo de geração dos arquivos para o Banco de Pontos de Controle, em complemento as rotinas contidas no plugin do QGIS.
+
