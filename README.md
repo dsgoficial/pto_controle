@@ -6,7 +6,7 @@ Repositório que contém um conjunto de ferramentas para a coleta de Pontos de C
 
 ## Documentação e Guias de Aplicação (wiki_pto_controle)
 
-Acessada através desse [link](https://dsgoficial.github.io/pto_controle/)
+Acessada através desse [link](https://dsgoficial.github.io/pto_controle/).
 
 ## Arquivos (arquivos)
 
