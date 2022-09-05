@@ -75,7 +75,7 @@ const config = {
           },
           {
             type: 'doc',
-            docId: 'problemas-comuns',
+            docId: 'erros_comuns/npm_proxy',
             position: 'left',
             label: 'Erros Comuns',
           },
