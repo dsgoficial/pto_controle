@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Organização de Pontos de Controle',
-  tagline: 'A Cartografia Documentada',
+  tagline: '',
   url: 'https://github.com/dsgoficial',
   baseUrl: '/pto_controle/',
   onBrokenLinks: 'throw',
