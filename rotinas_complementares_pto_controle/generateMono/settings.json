@@ -1,5 +1,5 @@
 {
-    "signature": "C:\\Users\\marcel\\Desktop\\monografiaptocontrole\\assinatura.jpg",
-    "pathLibreOffice": "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
-    "pathImageCGEO": "C:\\Users\\marcel\\Desktop\\monografiaptocontrole\\1cgeo.png"
+    "signature": "caminho_assinatura",
+    "pathLibreOffice": "caminho_libreoffice",
+    "pathImageCGEO": "caminho_imagem_cgeo"
 }
