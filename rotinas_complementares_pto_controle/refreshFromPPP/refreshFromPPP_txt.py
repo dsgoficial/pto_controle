@@ -66,7 +66,7 @@ class RefreshFromPPP():
                 point['data_processamento'] = datetime.strptime(data[0], '%Y/%m/%d')  
                 orbita_str = re.findall(r'ORBITA (.+)', page_content[11])
                 point['orbita'] = self.map_orbit[orbita_str[0]]
-                point['altitude_ortometrica'] = re.findall(r'[0-9]{2,},[0-9]{1,2}', page_content[25])
+                point['altitude_ortometrica'] = re.findall(r'[0-9]{1,},[0-9]{1,2}', page_content[25])
                 point['altitude_ortometrica'] = str(point['altitude_ortometrica']).replace(",", ".")
                 point['altitude_ortometrica'] = str(point['altitude_ortometrica']).replace("[", "")
                 point['altitude_ortometrica'] = str(point['altitude_ortometrica']).replace("]", "")
