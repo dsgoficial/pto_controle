@@ -80,8 +80,11 @@ class GenerateMonograpy():
 
     def executeProcess(self, folder):
         pto = self.fetchOne(folder.name)
-        # print(pto)
-
+        if pto['ponto_base'] == None:
+            pto['orbt_base'] = 'Órbita'
+        else:
+            pto['orbt_base'] = 'Base'
+            pto['orbita1'] = pto['ponto_base']
         pto['dataMono'] = date.today().strftime('%d/%m/%Y')
         # Necessário para diminuir o tamanho dos campo no modelo:
         pto['freq'] = pto['freq_processada']
@@ -124,7 +127,7 @@ class GenerateMonograpy():
 
         # Path do template
         result = engine.render(
-            template='../modelo_retrato.odt', pto=pto)
+            template='../modelo.odt', pto=pto)
 
         # Cria a pasta 8_Monografia
         Path.mkdir(folder / '8_Monografia', exist_ok=True)
