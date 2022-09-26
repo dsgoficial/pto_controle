@@ -60,3 +60,6 @@ Número de série da antena | numero_serie_antena | Ex: 039441923
 5_Foto_Auxiliar
 ```
 * O operador deve realizar o processamento do arquivo bruto e sua conversão em arquivos RINEX (.o, .g, .n), utilizando programas semelhantes ao Convert2RINEX da TRIMBLE
+
+## Caso de Posicionamento Relativo Estático
+O medidor deverá criar uma coluna no arquivo de metadados com a codificação **ponto_base**, sendo necessário indicar quem é a base do ponto que está sendo medido. No mesmo conjunto de arquivos deverá conter o Ponto Base, nesse caso, sua coluna **ponto_base** é deixada em branco.

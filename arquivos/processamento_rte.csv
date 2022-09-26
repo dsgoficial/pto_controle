@@ -1,0 +1,3 @@
+"cod_ponto","latitude","longitude","norte","leste","altitude_geometrica","altitude_ortometrica","ponto_base","modelo_geoidal","data_processamento","meridiano_central"
+"RS-Base-5","-29.7365461","-53.844412","654650.321","6549846.123","1.4","1.6",,"de_acordo_mapgeo","01-01-2022",51
+"RS-HV-52","-29.7035331","-53.929493","654650.321","6549846.123","1.45","1.4","RS-BASE-5","de_acordo_mapgeo","01-01-2022",51

@@ -1,6 +1,6 @@
 ---
 title: 'Preparar para PPP'
-sidebar_position: 5
+sidebar_position: 1
 ---
 Preparação dos arquivos para PPP-IBGE.
 

@@ -1,6 +1,6 @@
 ---
 title: 'Procedimento pós-PPP'
-sidebar_position: 7
+sidebar_position: 3
 ---
 Descompacta os arquivos baixados nas pastas dos pontos.
 

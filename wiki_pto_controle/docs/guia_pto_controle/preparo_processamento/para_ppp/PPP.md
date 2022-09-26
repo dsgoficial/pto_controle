@@ -1,6 +1,6 @@
 ---
 title: 'PPP'
-sidebar_position: 6
+sidebar_position: 2
 ---
 Executada fora do QGIS, processamento de PPP pelo IBGE.
 
@@ -26,6 +26,6 @@ testcafe -c 1 chrome ppp.js "pasta_3" "pasta_ppp_existentes" seuemail@provedor.c
 
 * Para o pleno funcionamento, principalmente em **múltiplos donwloads**, é necessário autorizar o navegador de internet a realizar vários downloads sequenciais e desabilitar a opção de Escolher Local de Salvamento, já selecionando uma pasta padrão para download dos arquivos.
 
-| ![img8](./img/image10.png)|
+| ![img8](../../img/image10.png)|
 |:--:|
 | *Seleção pasta donwloads* |
