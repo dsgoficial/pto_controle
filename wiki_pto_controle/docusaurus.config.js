@@ -28,6 +28,15 @@ const config = {
     locales: ['pt-BR'],
   },
 
+  plugins:[
+    [require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        hashed: true,
+        language: "en"
+      }
+    ]
+  ],
+
   presets: [
     [
       'classic',
