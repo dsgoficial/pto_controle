@@ -35,6 +35,7 @@ from .refreshDB.refreshDB import RefreshDB
 from .createDB.createDB import CreateDatabase
 from .beforePPP.beforePPP import BeforePPP
 from .afterPPP.afterPPP import AfterPPP
+from .PPP.PPP import PPP
 from .distributeImages.distributeImages import DistributeImages
 from .loadToBPC.loadToBPC import LoadToBPC
 
@@ -65,6 +66,7 @@ class PontoControleProvider(QgsProcessingProvider):
         self.addAlgorithm(CreateDatabase())
         self.addAlgorithm(BeforePPP())
         self.addAlgorithm(AfterPPP())
+        self.addAlgorithm(PPP())
         self.addAlgorithm(DistributeImages())
         self.addAlgorithm(LoadToBPC())
 
