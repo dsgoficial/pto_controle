@@ -101,6 +101,6 @@ class HandleLoadToBPC():
                         continue
                     if item == '.DS_Store':
                         continue
-                    if os.path.basename(item).startswith('__MACOSX/'):
+                    if '__MACOSX/' in str(Path(item).parent):
                         continue
                     zf.write(item, item.relative_to(os.path.dirname(item)))
