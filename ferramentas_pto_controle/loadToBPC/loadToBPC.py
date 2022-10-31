@@ -36,7 +36,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterString,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterNumber)
+                       QgsProcessingParameterNumber, QgsProcessingUtils)
 from qgis.PyQt.QtCore import QCoreApplication
 from .handleLoadToBPC import HandleLoadToBPC
 
@@ -135,16 +135,83 @@ class LoadToBPC(QgsProcessingAlgorithm):
         password = self.parameterAsString(parameters, self.PASSWORD, context)
 
         handle = HandleLoadToBPC(folder_in, folder_out)
-        where_clausule = handle.getWhereClausule()
+        temp_folder = QgsProcessingUtils.tempFolder()
+        where_clausule = handle.getWhereClausule(temp_folder)
 
         db_string = "PG:dbname={} host={} port={} user={} password={}".format(
             bdname, server_ip, port, user, password)
 
-        sql_string = f"SELECT * FROM bpc.ponto_controle_p {where_clausule}"
+        multilinestring = '''id,
+  cod_ponto,
+  data_rastreio as data_medicao,
+  tipo_ref,
+  latitude,
+  longitude,
+  norte as coord_n,
+  leste as coord_e,
+  altitude_ortometrica,
+  altitude_geometrica,
+  sistema_geodesico,
+  outra_ref_plan,
+  referencial_altim,
+  outro_ref_alt,
+  fuso,
+  meridiano_central,
+  tipo_situacao,
+  reserva,
+  lote,
+  latitude_planejada,
+  longitude_planejada,
+  medidor as operador_medicao,
+  classificacao_ponto,
+  observacao,
+  metodo_posicionamento as metodo_medicao,
+  ponto_base,
+  materializado,
+  altura_antena,
+  tipo_medicao_altura,
+  referencia_medicao_altura as ref_med_altura,
+  altura_objeto,
+  mascara_elevacao,
+  taxa_gravacao,
+  modelo_gps,
+  modelo_antena,
+  numero_serie_gps as nr_serie_receptor,
+  numero_serie_antena as nr_serie_antena,
+  modelo_geoidal,
+  precisao_horizontal_esperada as precisao_horizontal,
+  precisao_vertical_esperada as precisao_vertical,
+  freq_processada,
+  data_processamento,
+  orbita,
+  orgao_executante,
+  projeto,
+  engenheiro_responsavel as nome_responsavel,
+  crea_engenheiro_responsavel as crea_responsavel,
+  cpf_engenheiro_responsavel as cpf_responsavel,
+  geometria_aproximada,
+  tipo_pto_ref_geod_topo,
+  tipo_marco_limite,
+  rede_referencia,
+  referencial_grav,
+  situacao_marco,
+  data_visita,
+  valor_gravidade,
+  possui_monografia,
+  numero_fotos,
+  possui_croqui,
+  possui_arquivo_rastreio,
+  4674 as EPSG,
+  cod_ponto||'.zip' as anexos,
+  (fim_rastreio - inicio_rastreio) as tempo_rastreio,
+  geom
+'''
+
+        sql_string = f"SELECT {multilinestring} FROM bpc.ponto_controle_p {where_clausule}"
 
         gpkg_path = Path(folder_out, 'pontos_exportados.gpkg')
 
-        subprocess.run(["ogr2ogr", "-f", "GPKG", f"{gpkg_path}", f"{db_string}", "-sql", f"{sql_string}"])
+        subprocess.run(["ogr2ogr", "-f", "GPKG", f"{gpkg_path}", f"{db_string}", "-sql", f"{sql_string}", "-nln", "pontos_exportados"])
 
         return {self.OUTPUT: ''}
 
