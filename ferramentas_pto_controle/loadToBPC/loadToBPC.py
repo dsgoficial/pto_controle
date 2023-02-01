@@ -143,7 +143,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
 
         multilinestring = '''id,
   cod_ponto,
-  data_rastreio as data_medicao,
+  cast(data_rastreio AS varchar) as data_medicao,
   tipo_ref,
   latitude,
   longitude,
@@ -188,7 +188,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
   projeto,
   engenheiro_responsavel as nome_responsavel,
   crea_engenheiro_responsavel as crea_responsavel,
-  cpf_engenheiro_responsavel as cpf_responsavel,
+  NULLIF(regexp_replace(cpf_engenheiro_responsavel, '\D','','g'), '')::text as cpf_responsavel,
   geometria_aproximada,
   tipo_pto_ref_geod_topo,
   tipo_marco_limite,
