@@ -45,7 +45,9 @@ Referência de medição de altura | referencia_medicao_altura | Ver (*)
 Altura do objeto | altura_objeto | Altura do objeto (muro, cercas, telhados, etc) em metros, caso medição ocorra acima dele. Ex: 1.8
 Número de série do GPS | numero_serie_gps | Ex: 293441023
 Número de série da antena | numero_serie_antena | Ex: 039441923
+Classificação do Ponto | classificacao_ponto | Ver (*)
 
+Para os locais sinalizados com *, o medidor deve consultar o [code list](https://github.com/dsgoficial/pto_controle/blob/main/ferramentas_pto_controle/createDB/new_db.sql) do banco gerado para preenchimento correto.
 ## Demais informações
 * Nas informações de **inicio_rastreio** e **fim_rastreio** devem ser informados o momento que o aparelho foi ligado e não o momento que ele começou a rastrear, bem como no fim do rastreio, deve ser informado o momento que o aparelho foi desligado. Cabe ao medidor medir o tempo úlil de rastreio, que varia de acordo com o aparelho utilizado.
 * O arquivo bruto oriundo do aparelho, .t01 para TRIMBLE e .tps para a Topcon, deve possuir o mesmo nome do cod_ponto

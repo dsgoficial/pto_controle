@@ -23,7 +23,7 @@ pip uninstall nome-pacote
 ```
 
 # Instalar
-Caso não esteja instalado algum dos pacotes acima, ou tenha sido necessário desinstalar devido ao versionamento, deverá ser instalado os pacotes corretos
+Caso não esteja instalado algum dos pacotes listados acima, ou tenha sido necessário desinstalar devido ao versionamento, deverão ser instalados os pacotes corretos.
 ```
 pip install nome-pacote=numero-versao
 ```
