@@ -9,8 +9,8 @@ Devido o alto correlacionamento de ferramentas: QGIS, python e node.js, algumas 
 
 Para isso, deve-se realizar o downgrade de duas bibliotecas do Python, para que as rotinas rodem em perfeito funcionamento:
 * Jinja2 = 2.11.2
-* MarkupSafe = 2.4.3
-* markdown2 = 2.0.1
+* MarkupSafe = 2.0.1
+* markdown2 = 2.4.3
 * secretary = 0.2.19
 
 # Verificar versão
