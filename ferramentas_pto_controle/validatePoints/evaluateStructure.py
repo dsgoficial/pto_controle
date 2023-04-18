@@ -242,7 +242,7 @@ class EvaluateStructure():
 
     @staticmethod
     def evaluate_nome_ponto(nome):
-        pto_regex = "^[A-Z][A-Z]-(HV|Base)-[1-9]+[0-9]*$"
+        pto_regex = "^[A-Z][A-Z]-(HV|Base|BASE)-[1-9]+[0-9]*$"
         if search(pto_regex, nome):
             return True
         else:
@@ -427,7 +427,7 @@ class EvaluateStructure():
         erros += self.no_folders(pasta)
         files = [f for f in listdir(pasta) if isfile(join(pasta, f))]
         fotos_ok = []
-        foto_regex = "^{0}_(360|3[0-5][0-9]|[0-2][0-9][0-9])_FOTO.(jpg|JPG|jpeg|JPEG)$".format(pto)
+        foto_regex = "^{0}_(360|3[0-5][0-9]|[0-2][0-9][0-9])_FOTO.(jpg|JPG|jpeg|JPEG|png|PNG)$".format(pto)
 
         for f in files:
             if search(foto_regex, f):
@@ -448,7 +448,7 @@ class EvaluateStructure():
         erros = []
         erros += self.no_folders(pasta)
         files = [f for f in listdir(pasta) if isfile(join(pasta, f))]
-        foto_regex = "^{0}_\d+_FOTO_AUX.(jpg|JPG|jpeg|JPEG)$".format(pto)
+        foto_regex = "^{0}_\d+_FOTO_AUX.(jpg|JPG|jpeg|JPEG|png|PNG)$".format(pto)
         for f in files:
             if search(foto_regex, f):
                 pass
@@ -463,12 +463,12 @@ class EvaluateStructure():
     def evaluate_croqui(self, pasta, pto):
         erros = []
         erros += self.no_folders(pasta)
-        files = [f.replace(".JPG", ".jpg").replace(".JPEG", ".jpg").replace(".jpeg", ".jpg")
+        files = [f.replace(".JPG", ".xxx").replace(".JPEG", ".xxx").replace(".jpeg", ".xxx").replace(".PNG", ".xxx")
                  for f in listdir(pasta) if isfile(join(pasta, f))]
         arquivos_incorretos = set(files).difference(
-            ["Thumbs.db", "desktop.ini", "{0}_CROQUI.jpg".format(pto)])
+            ["Thumbs.db", "desktop.ini", "{0}_CROQUI.xxx".format(pto)])
         arquivos_faltando = set(
-            ["{0}_CROQUI.jpg".format(pto)]).difference(files)
+            ["{0}_CROQUI.xxx".format(pto)]).difference(files)
         if len(arquivos_incorretos) > 0:
             for a in arquivos_incorretos:
                 erros.append(

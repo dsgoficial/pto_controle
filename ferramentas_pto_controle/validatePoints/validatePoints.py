@@ -211,7 +211,7 @@ class ValidationString(QgsProcessingParameterString):
         super().__init__(name, description)
 
     def checkValueIsAcceptable(self, value, context=None):
-        if re.match(r'([a-z]+)(?:;|$)', value):
+        if re.match(r'([a-z|A-Z]+)(?:;|$)', value):
             return True
 
 
