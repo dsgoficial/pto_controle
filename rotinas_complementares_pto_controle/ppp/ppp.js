@@ -41,7 +41,7 @@ const findPPP = dir => {
 const removeDownloaded = dir => {
   let zips = [];
   readdirSync(dir).forEach(file => {
-    const pto_regex = /^([A-Z]{2})-(HV|Base)-[1-9]+[0-9]*$/;
+    const pto_regex = /^([A-Z]{2})-(HV|Base|BASE)-[1-9]+[0-9]*$/;
     if (
       lstatSync(path.join(dir, file)).isFile() &&
       file.split(".")[file.split(".").length - 1] == "zip" &&

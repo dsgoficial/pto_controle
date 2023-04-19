@@ -24,7 +24,7 @@ from pathlib import Path
 
 
 def criaPastas(pasta):
-    pto_regex = r"^([A-Z]{2})-(HV|Base)-[1-9]+[0-9]*$"
+    pto_regex = r"^([A-Z]{2})-(HV|Base|BASE)-[1-9]+[0-9]*$"
     date_regex = r"\d{4}-\d{2}-\d{2}"
     for root, dirs, files in os.walk(pasta):
         if re.match(pto_regex, Path(root).parts[-1]):

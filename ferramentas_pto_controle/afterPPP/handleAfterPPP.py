@@ -43,7 +43,7 @@ def extraiZip(zip, estrutura):
 
 def organizePPP(estrutura_pasta, pasta_ppp):
     errors = []
-    pto_regex = r"^[A-Z][A-Z]-(HV|Base)-[1-9]+[0-9]*$"
+    pto_regex = r"^[A-Z][A-Z]-(HV|Base|BASE)-[1-9]+[0-9]*$"
     zipfiles = {f.split("_")[1][:-4]: os.path.join(pasta_ppp, f) for f in os.listdir(pasta_ppp) if os.path.isfile(
         os.path.join(pasta_ppp, f)) and f.endswith('.zip') and len(f.split("_")) == 4 and search(pto_regex, f.split("_")[1][:-4])}
     ptos_estrutura = {}
