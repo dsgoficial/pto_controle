@@ -70,6 +70,8 @@ class HandleLoadToBPC():
             "8_Monografia": lambda x: f"{name}_MONOGRAFIA.pdf",
             "7_Imagens_Monografia": lambda x: f"{name}_AEREA.jpg",
             "6_Processamento_PPP": lambda x: f"{name}_PROCESSAMENTO.pdf",
+            "6_Processamento_RTE": lambda x: f"{name}_PROCESSAMENTO.pdf",
+            
         }
         for point in points:
             name = point.name
@@ -81,6 +83,10 @@ class HandleLoadToBPC():
             ]
             path_ppp = point / '6_Processamento_PPP'
             for child in path_ppp.iterdir():
+                if child.suffix == '.pdf':
+                    files.append(child)
+            path_rte = point / '6_Processamento_RTE'
+            for child in path_rte.iterdir():
                 if child.suffix == '.pdf':
                     files.append(child)
             temp_destination_files = []

@@ -137,6 +137,10 @@ class EvaluateStructure():
         if self.ignora_processamento:
             if "6_Processamento_PPP" in subpastas:
                 subpastas.remove("6_Processamento_PPP")
+            if "6_Processamento_RTE" in subpastas:
+                subpastas.remove("6_Processamento_RTE")
+            if "7_Imagens_Monografia" in subpastas:
+                subpastas.remove("7_Imagens_Monografia")
 
         pastas_incorretas = set(subpastas).difference(
             ["1_Formato_Nativo", "2_RINEX", "3_Foto_Rastreio", "4_Croqui", "5_Foto_Auxiliar"])
@@ -196,6 +200,8 @@ class EvaluateStructure():
                 if key == 'END OF HEADER':
                     break
                 value = list(filter(None, line[:60].strip().split(' ')))
+                if len(value) == 0:
+                    continue
                 if key == 'MARKER NAME':
                     rinex_info['cod_ponto_1'] = value[0]
                 elif key == 'MARKER NUMBER':
@@ -463,7 +469,7 @@ class EvaluateStructure():
     def evaluate_croqui(self, pasta, pto):
         erros = []
         erros += self.no_folders(pasta)
-        files = [f.replace(".JPG", ".xxx").replace(".JPEG", ".xxx").replace(".jpeg", ".xxx").replace(".PNG", ".xxx")
+        files = [f.replace(".JPG", ".xxx").replace(".JPEG", ".xxx").replace(".jpeg", ".xxx").replace(".PNG", ".xxx").replace(".png", ".xxx")
                  for f in listdir(pasta) if isfile(join(pasta, f))]
         arquivos_incorretos = set(files).difference(
             ["Thumbs.db", "desktop.ini", "{0}_CROQUI.xxx".format(pto)])
