@@ -114,7 +114,7 @@ class DistributeImages(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '8- Distribuir vistas aéreas na estrutura de pasta'
+        return '08 - Distribuir vistas aéreas na estrutura de pasta'
 
     def displayName(self):
         """

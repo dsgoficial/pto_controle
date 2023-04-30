@@ -152,7 +152,7 @@ class ValidatePoints(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '2- Validar a estrutura de pastas'
+        return '02 - Validar a estrutura de pastas'
 
     def displayName(self):
         """

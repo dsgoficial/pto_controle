@@ -84,7 +84,7 @@ class BeforePPP(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '4- Preparar para PPP'
+        return '04 - Preparar para PPP'
 
     def displayName(self):
         """

@@ -143,7 +143,7 @@ class RefreshDB(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '3- Atualizar banco de dados'
+        return '03 - Atualizar banco de dados'
 
     def displayName(self):
         """
