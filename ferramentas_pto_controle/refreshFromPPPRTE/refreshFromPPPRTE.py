@@ -31,12 +31,14 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterString,
-                       QgsProcessingParameterNumber)
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterEnum)
 from qgis.PyQt.QtCore import QCoreApplication
 from .handleRefreshFromPPP import HandleRefreshFromPPP
+from .handleRefreshFromCSV import HandleRefreshFromCSV
 
 
-class RefreshFromPPP(QgsProcessingAlgorithm):
+class RefreshFromPPPRTE(QgsProcessingAlgorithm):
     """
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -51,6 +53,7 @@ class RefreshFromPPP(QgsProcessingAlgorithm):
     """
 
     OUTPUT = 'OUTPUT'
+    TYPE = 'TYPE'
     FOLDER = 'FOLDER'
     SERVERIP = 'SERVERIP'
     PORT = 'PORT'
@@ -64,13 +67,19 @@ class RefreshFromPPP(QgsProcessingAlgorithm):
         with some other properties.
         """
         self.addParameter(
+            QgsProcessingParameterEnum(
+                self.TYPE,
+                self.tr('Selecione o método de processamento:'),
+                options = [self.tr('PPP'), self.tr('RTE')]
+            )
+        )
+        self.addParameter(
             QgsProcessingParameterFile(
                 self.FOLDER,
                 self.tr('Selecionar a pasta'),
                 behavior=QgsProcessingParameterFile.Folder
             )
         )
-
         self.addParameter(
             QgsProcessingParameterString(
                 self.SERVERIP,
@@ -113,14 +122,20 @@ class RefreshFromPPP(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
+        process_type = self.parameterAsInt(parameters, self.TYPE, context)
         folder = self.parameterAsFile(parameters, self.FOLDER, context)
         server_ip = self.parameterAsString(parameters, self.SERVERIP, context)
         port = self.parameterAsInt(parameters, self.PORT, context)
         bdname = self.parameterAsString(parameters, self.BDNAME, context)
         user = self.parameterAsString(parameters, self.USER, context)
         password = self.parameterAsString(parameters, self.PASSWORD, context)
-        refresh = HandleRefreshFromPPP(folder, server_ip, port, bdname, user, password)
-        refresh.readPPP()
+        if process_type == 0:
+            refresh = HandleRefreshFromPPP(folder, server_ip, port, bdname, user, password)
+            refresh.readPPP()
+        elif process_type == 1:
+            refresh = HandleRefreshFromCSV(folder, server_ip, port, bdname, user, password)
+            refresh.readCSV()
+
         return {self.OUTPUT: ''}
 
     def name(self):
@@ -131,7 +146,7 @@ class RefreshFromPPP(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '07 - Atualizar banco com dados do PPP'
+        return '07 - Atualizar banco com dados do PPP/RTE'
 
     def displayName(self):
         """
@@ -162,9 +177,9 @@ class RefreshFromPPP(QgsProcessingAlgorithm):
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta rotina atualiza o banco de dados com os dados do PPP. 
+        Esta rotina atualiza o banco de dados com os dados do PPP ou RTE. 
         Os parâmetros necessários para essa rotina são:
-        - Pasta com a estrutura de pontos de controle (deve estar validada de pela ferramenta Data Validation)
+        - Pasta com a estrutura de pontos de controle (deve estar validada de pela ferramenta de validação de pastas.)
         - Parâmetros de conexão do banco:
             -- IP da máquina (se trabalhando localmente utilizar localhost)
             -- Porta (geralmente 5432 para PostgreSQL)
@@ -176,4 +191,4 @@ class RefreshFromPPP(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return RefreshFromPPP()
+        return RefreshFromPPPRTE()

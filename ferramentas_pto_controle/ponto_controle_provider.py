@@ -37,7 +37,7 @@ from .beforePPP.beforePPP import BeforePPP
 from .afterPPP.afterPPP import AfterPPP
 from .distributeImages.distributeImages import DistributeImages
 from .loadToBPC.loadToBPC import LoadToBPC
-from .refreshFromPPP.refreshFromPPP import RefreshFromPPP
+from .refreshFromPPPRTE.refreshFromPPPRTE import RefreshFromPPPRTE
 
 
 class PontoControleProvider(QgsProcessingProvider):
@@ -68,7 +68,7 @@ class PontoControleProvider(QgsProcessingProvider):
         self.addAlgorithm(AfterPPP())
         self.addAlgorithm(DistributeImages())
         self.addAlgorithm(LoadToBPC())
-        self.addAlgorithm(RefreshFromPPP())
+        self.addAlgorithm(RefreshFromPPPRTE())
 
     def id(self):
         """
