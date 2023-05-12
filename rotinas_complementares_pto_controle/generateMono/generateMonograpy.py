@@ -18,7 +18,7 @@ class GenerateMonograpy():
         self.conn = psycopg2.connect("host='{0}' port='{1}' dbname='{2}' user='{3}' password='{4}'".format(host, port, db_name, user, password))
         self.path = Path(path)
         self.img_extensions = ['.png', '.PNG', '.jpg', '.JPG', '.jpeg', '.JPEG']
-        with open('settings.json') as setting: 
+        with open('config_default_monografia.json') as setting: 
             self.settings = json.load(setting)
         self.points = []
         # processImages(self.path)
@@ -127,7 +127,7 @@ class GenerateMonograpy():
 
         # Path do template
         result = engine.render(
-            template='../modelo.odt', pto=pto)
+            template='./' + self.settings['modelo'] + '.odt', pto=pto)
 
         # Cria a pasta 8_Monografia
         Path.mkdir(folder / '8_Monografia', exist_ok=True)
