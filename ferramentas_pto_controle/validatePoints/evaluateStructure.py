@@ -469,7 +469,7 @@ class EvaluateStructure():
     def evaluate_croqui(self, pasta, pto):
         erros = []
         erros += self.no_folders(pasta)
-        files = [f.replace(".JPG", ".xxx").replace(".JPEG", ".xxx").replace(".jpeg", ".xxx").replace(".PNG", ".xxx").replace(".png", ".xxx")
+        files = [f.replace(".JPG", ".xxx").replace(".jpg", ".xxx").replace(".JPEG", ".xxx").replace(".jpeg", ".xxx").replace(".PNG", ".xxx").replace(".png", ".xxx")
                  for f in listdir(pasta) if isfile(join(pasta, f))]
         arquivos_incorretos = set(files).difference(
             ["Thumbs.db", "desktop.ini", "{0}_CROQUI.xxx".format(pto)])
