@@ -42,7 +42,7 @@ from pathlib import Path
 
 
 class EvaluateStructure():
-    def __init__(self, pasta, medidores, data, fuso_horario, ignora_processamento, settings):
+    def __init__(self, pasta, medidores, data, fuso_horario, estacao, ignora_processamento, settings):
         self.erros = []
         self.pasta = pasta
         self.medidores = medidores.split(";")
@@ -51,6 +51,7 @@ class EvaluateStructure():
         self.ignora_processamento = ignora_processamento
         with open(settings) as setting:
             self.rules = json.load(setting)
+        self.estacao = estacao
         self.rinex_data = {}
         self.csv_data = {}
 
@@ -135,10 +136,8 @@ class EvaluateStructure():
         subpastas = [f for f in listdir(pasta) if isdir(join(pasta, f))]
 
         if self.ignora_processamento:
-            if "6_Processamento_PPP" in subpastas:
-                subpastas.remove("6_Processamento_PPP")
-            if "6_Processamento_RTE" in subpastas:
-                subpastas.remove("6_Processamento_RTE")
+            if "6_Processamento" in subpastas:
+                subpastas.remove("6_Processamento")
             if "7_Imagens_Monografia" in subpastas:
                 subpastas.remove("7_Imagens_Monografia")
 
@@ -387,14 +386,14 @@ class EvaluateStructure():
             for a in arquivos_incorretos:
                 erros.append(
                     u"A pasta {0} não deve conter o arquivo {1}.".format(pasta, a))
-        if self.rules['default']['modelo_gps'] == 'TRIMBLE 5700II':
-            arquivos_faltando = set(["{0}.t01".format(pto)]).difference(files)
+        if self.estacao == 0:
+            arquivos_faltando = set(["{0}.tps".format(pto)]).difference(files)
             if len(arquivos_faltando) > 0:
                 for a in arquivos_faltando:
                     erros.append(
                         u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
-        if self.rules['default']['modelo_gps'] == 'TOPCON Hiper VR':
-            arquivos_faltando = set(["{0}.tps".format(pto)]).difference(files)
+        if self.estacao == 1:
+            arquivos_faltando = set(["{0}.t01".format(pto)]).difference(files)
             if len(arquivos_faltando) > 0:
                 for a in arquivos_faltando:
                     erros.append(
@@ -405,13 +404,19 @@ class EvaluateStructure():
         erros = []
         erros += self.no_folders(pasta)
         ano = data[2:4]
-        files = [f for f in listdir(pasta) if isfile(join(pasta, f))]
+        files = [f.replace('.{0}N'.format(ano), '.{0}n'.format(ano)).replace('.{0}O'.format(ano), '.{0}o'.format(ano)) 
+                 for f in listdir(pasta) if isfile(join(pasta, f))]
 
         if self.ignora_processamento and '{0}.zip'.format(pto) in files:
             files.remove('{0}.zip'.format(pto))
 
         arquivos_incorretos = set(files).difference(
-            ["{0}.{1}n".format(pto, ano), "{0}.{1}o".format(pto, ano), "{0}.{1}h".format(pto, ano), "{0}.{1}g".format(pto, ano), "desktop.ini"])
+            ["{0}.{1}n".format(pto, ano), "{0}.{1}N".format(pto, ano), 
+             "{0}.{1}o".format(pto, ano), "{0}.{1}O".format(pto, ano), 
+             "{0}.{1}h".format(pto, ano), "{0}.{1}H".format(pto, ano), 
+             "{0}.{1}g".format(pto, ano), "{0}.{1}G".format(pto, ano),
+             "{0}.{1}l".format(pto, ano), "{0}.{1}L".format(pto, ano),
+             "desktop.ini"])
         arquivos_faltando = set(
             ["{0}.{1}n".format(pto, ano), "{0}.{1}o".format(pto, ano)]).difference(files)
         if len(arquivos_incorretos) > 0:
@@ -496,17 +501,26 @@ class EvaluateStructure():
 
         for key in self.csv_data:
             if key in self.rinex_data:
-                if self.rinex_data[key]["cod_ponto_1"] != self.csv_data[key]["cod_ponto"] or self.rinex_data[key]["cod_ponto_2"] != self.csv_data[key]["cod_ponto"]:
+                try:
+                    self.rinex_data[key]["cod_ponto_2"]
+                except KeyError:
+                    self.rinex_data[key]["cod_ponto_2"] = self.rinex_data[key]["cod_ponto_1"]
+                    erros.append(u"{0}: Verifique os valores de MARKER NAME e MARKER NUMBER do arquivo RINEX do ponto {1}.".format(
+                        pasta, self.csv_data[key]["cod_ponto"]))
+                if (self.rinex_data[key]["cod_ponto_1"] != self.csv_data[key]["cod_ponto"] or self.rinex_data[key]["cod_ponto_2"] != self.csv_data[key]["cod_ponto"]):
                     erros.append(u"{0}: O arquivo RINEX do ponto {1} está com o nome de ponto incorreto.".format(
                         pasta, self.csv_data[key]["cod_ponto"]))
 
                 if self.rinex_data[key]["nr_serie_receptor"] != self.csv_data[key]["numero_serie_gps"]:
                     erros.append(u"{0}: O arquivo RINEX do ponto {1} está com o número de série do receptor diferente do CSV.".format(
                         pasta, self.csv_data[key]["cod_ponto"]))
-
-                if self.rinex_data[key]["nr_serie_antena"] != self.csv_data[key]["numero_serie_antena"]:
-                    erros.append(u"{0}: O arquivo RINEX do ponto {1} está com o número de série da antena diferente do CSV.".format(
-                        pasta, self.csv_data[key]["cod_ponto"]))
+                    
+                if self.estacao == 1:
+                    if self.rinex_data[key]["nr_serie_antena"] != self.csv_data[key]["numero_serie_antena"]:
+                        erros.append(u"{0}: O arquivo RINEX do ponto {1} está com o número de série da antena diferente do CSV.".format(
+                            pasta, self.csv_data[key]["cod_ponto"]))
+                else:
+                    continue
 
                 if self.rinex_data[key]["data_rastreio_1"] != self.csv_data[key]["data_rastreio"] or self.rinex_data[key]["data_rastreio_2"] != self.csv_data[key]["data_rastreio"]:
                     erros.append(u"{0}: O arquivo RINEX do ponto {1} está com a data de rastreio incorreta.".format(

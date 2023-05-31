@@ -57,8 +57,10 @@ class HandleRefreshDB():
         '''
         for root, dirs, files in os.walk(self.pasta):
             for f in files:
-                if re.search(r'.[0-9][0-9]o$', f):
+                pasta = root.split(os.sep)[-1]
+                if re.search(r'.[0-9][0-9]o|O$', f) and pasta == '2_RINEX':
                     with open(os.path.join(root, f)) as rinex:
+                        print(f)
                         lines = rinex.readlines()
                         for line in lines:
                             key = line[60:].strip()
@@ -105,9 +107,9 @@ class HandleRefreshDB():
         self.conn.commit()
 
     def getAdditionalInfo(self, point):
-        croqui = [x for x in self.pasta.rglob('*') if x.is_file() and x.match('*{}_CROQUI.(jpg|JPG|jpeg|JPEG)$'.format(point['cod_ponto']))]
-        arq_rastreio = [x for x in self.pasta.rglob('*') if x.is_file() and x.match('{}.T01'.format(point['cod_ponto']))]
-        fotos = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '3_Foto_Rastreio' and x.match('{}*.jpg'.format(point['cod_ponto']))]
+        croqui = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '4_Croqui' and x.match('*{}_CROQUI.*'.format(point['cod_ponto']))]
+        arq_rastreio = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '1_Formato_Nativo' and x.match('*{}.*'.format(point['cod_ponto']))]
+        fotos = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '3_Foto_Rastreio' and x.match('{}*_FOTO.*'.format(point['cod_ponto']))]
         return len(croqui), len(arq_rastreio), len(fotos)
 
     def getDefaults(self, row):

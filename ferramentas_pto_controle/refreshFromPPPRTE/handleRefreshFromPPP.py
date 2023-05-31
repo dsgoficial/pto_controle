@@ -21,7 +21,7 @@ class HandleRefreshFromPPP():
 
     def readPPP(self):
         # Possibility : update the timestamp of measure's beginning from PPP and orbita(has domain)
-        files = [x for x in self.folder.rglob('*.txt') if '6_Processamento_PPP' in x.parts]
+        files = [x for x in self.folder.rglob('*.txt') if '6_Processamento' in x.parts]
         correct_txts = []
         for item in files:
             if(not item.match("**/*LEIAME*")):
@@ -112,7 +112,6 @@ class HandleRefreshFromPPP():
     @staticmethod
     def getFuso(centralMeridian):
         return -(-(180 + centralMeridian)//6) # Equivalent to ceil
-
 
 if __name__ == "__main__":
     test = HandleRefreshFromPPP(*sys.argv[1:])

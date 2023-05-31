@@ -74,7 +74,8 @@ class CreateDatabase(QgsProcessingAlgorithm):
                 self.PORT,
                 self.tr('Insira a porta'),
                 minValue=0,
-                maxValue=9999
+                maxValue=9999,
+                defaultValue=5432
             )
         )
 
@@ -115,7 +116,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         db = HandleCreateDB(server_ip, port, bdname, user, password)
         db.create()
 
-        return {self.OUTPUT: 'Processamento concluído'}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """
@@ -159,7 +160,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         Esta ferramenta irá criar o banco de dados de pontos de controle necessário para a gerência do projeto.
         Certifique-se que o usuário utilizado possui permissão para criar bancos!
         Os parâmetros necessários são:
-        - IP da máquina (se trabalhando localmente utilizar localhost)
+        - IP da máquina que armazenará o banco (se trabalhando localmente utilizar localhost)
         - Porta (geralmente 5432 para PostgreSQL)
         - Nome do banco a ser gerado
         - Usuário do PostgreSQL

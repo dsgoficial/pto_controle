@@ -90,7 +90,8 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.PORT,
-                self.tr('Insira a porta')
+                self.tr('Insira a porta'),
+                defaultValue = 5432
             )
         )
 
@@ -136,7 +137,7 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
             refresh = HandleRefreshFromCSV(folder, server_ip, port, bdname, user, password)
             refresh.readCSV()
 
-        return {self.OUTPUT: ''}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """

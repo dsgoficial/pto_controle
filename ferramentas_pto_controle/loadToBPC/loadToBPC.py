@@ -36,7 +36,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterString,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterNumber, QgsProcessingUtils)
+                       QgsProcessingParameterNumber, QgsProcessingUtils,
+                       QgsProcessingParameterEnum)
 from qgis.PyQt.QtCore import QCoreApplication
 from .handleLoadToBPC import HandleLoadToBPC
 
@@ -63,12 +64,22 @@ class LoadToBPC(QgsProcessingAlgorithm):
     BDNAME = 'BDNAME'
     USER = 'USER'
     PASSWORD = 'PASSWORD'
+    TYPE = 'TYPE'
 
     def initAlgorithm(self, config):
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
         """
+
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.TYPE,
+                self.tr('Selecione o método de processamento:'),
+                options = [self.tr('PPP'), self.tr('RTE')]
+            )
+        )
+
         self.addParameter(
             QgsProcessingParameterFile(
                 self.FOLDERIN,
@@ -126,6 +137,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
+        process_type = self.parameterAsInt(parameters, self.TYPE, context)
         folder_in = self.parameterAsFile(parameters, self.FOLDERIN, context)
         folder_out = self.parameterAsFile(parameters, self.FOLDEROUT, context)
         server_ip = self.parameterAsString(parameters, self.SERVERIP, context)
@@ -134,9 +146,9 @@ class LoadToBPC(QgsProcessingAlgorithm):
         user = self.parameterAsString(parameters, self.USER, context)
         password = self.parameterAsString(parameters, self.PASSWORD, context)
 
-        handle = HandleLoadToBPC(folder_in, folder_out)
+        handle = HandleLoadToBPC(folder_in, folder_out, process_type)
         temp_folder = QgsProcessingUtils.tempFolder()
-        where_clausule = handle.getWhereClausule(temp_folder)
+        where_clausule = handle.getWhereClausule(temp_folder, process_type)
 
         db_string = "PG:dbname={} host={} port={} user={} password={}".format(
             bdname, server_ip, port, user, password)
@@ -213,7 +225,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
 
         subprocess.run(["ogr2ogr", "-f", "GPKG", f"{gpkg_path}", f"{db_string}", "-sql", f"{sql_string}", "-nln", "pontos_exportados"])
 
-        return {self.OUTPUT: ''}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """

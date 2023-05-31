@@ -36,7 +36,8 @@ from qgis.core import (QgsProcessingAlgorithm,
                        QgsProcessingParameterString,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterBoolean)
+                       QgsProcessingParameterBoolean,
+                       QgsProcessingParameterEnum)
 from qgis.PyQt.QtCore import QCoreApplication
 from .evaluateStructure import EvaluateStructure
 
@@ -59,6 +60,7 @@ class ValidatePoints(QgsProcessingAlgorithm):
     OPERATORS = 'OPERATORS'
     DATE = 'DATE'
     FUSE = 'FUSE'
+    ESTACAO = 'ESTACAO'
     IGN_PROC = 'IGN_PROC'
     FILE_DST = 'FILE_DST'
     JSON = 'JSON'
@@ -100,10 +102,18 @@ class ValidatePoints(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
+            QgsProcessingParameterEnum(
+                self.ESTACAO,
+                self.tr('Selecione o modelo da estação medidora:'),
+                options = [self.tr('TOPCON'), self.tr('TRIMBLE')]
+            )
+        )
+
+        self.addParameter(
             QgsProcessingParameterFileDestination(
                 self.FILE_DST,
                 self.tr('Insira o caminho do relatório de erros'),
-                fileFilter='.txt'
+                fileFilter='*.txt'
             )
         )
 
@@ -134,9 +144,10 @@ class ValidatePoints(QgsProcessingAlgorithm):
         file_dst = self.parameterAsFileOutput(
             parameters, self.FILE_DST, context)
         json_file = self.parameterAsFile(parameters, self.JSON, context)
+        estacao = self.parameterAsInt(parameters, self.ESTACAO, context)
 
         evaluate = EvaluateStructure(
-            folder, operators, date, fuse, ign_proc, json_file)
+            folder, operators, date, fuse, estacao, ign_proc, json_file)
         results = evaluate.evaluate()
         with open(file_dst, 'w') as f:
             erros_text = "\n".join(results)

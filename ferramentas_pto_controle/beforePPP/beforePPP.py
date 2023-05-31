@@ -74,7 +74,7 @@ class BeforePPP(QgsProcessingAlgorithm):
         criaPastas(folder)
         zipaPPP(folder)
 
-        return {self.OUTPUT: 'Processamento concluído'}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """
@@ -84,7 +84,7 @@ class BeforePPP(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '04 - Preparar para PPP'
+        return '04 - Preparar para Processamento'
 
     def displayName(self):
         """
@@ -115,7 +115,7 @@ class BeforePPP(QgsProcessingAlgorithm):
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta ferramenta cria a pasta 6_Processamento_PPP na estrutura de pastas e compacta os arquivos RINEX no formato zip.
+        Esta ferramenta cria a pasta 6_Processamento na estrutura de pastas e compacta os arquivos RINEX no formato zip.
         Para o correto funcionamento desta ferramenta é indispensável que as pastas estejam devidamente validadas pela rotina 2- Validar a estrutura de pastas .
         Os parâmetros necessários são:
         - Pasta com a estrutura de pontos de controle
