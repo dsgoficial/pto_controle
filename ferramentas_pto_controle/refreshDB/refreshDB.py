@@ -88,7 +88,8 @@ class RefreshDB(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.PORT,
-                self.tr('Insira a porta')
+                self.tr('Insira a porta'),
+                defaultValue = 5432
             )
         )
 

@@ -29,6 +29,10 @@ __copyright__ = '(C) 2019 by 1CGEO/DSG'
 
 __revision__ = '$Format:%H$'
 
+
+import os
+from qgis.PyQt.QtGui import QIcon
+
 from qgis.core import QgsProcessingProvider
 from .validatePoints.validatePoints import ValidatePoints
 from .refreshDB.refreshDB import RefreshDB
@@ -92,7 +96,13 @@ class PontoControleProvider(QgsProcessingProvider):
         Should return a QIcon which is used for your provider inside
         the Processing toolbox.
         """
-        return QgsProcessingProvider.icon(self)
+        return QIcon(os.path.join(
+            os.path.abspath(os.path.join(
+                os.path.dirname(__file__)
+            )),
+            'icons',
+            'topo.png'
+        ))
 
     def longName(self):
         """

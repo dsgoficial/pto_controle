@@ -34,6 +34,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterString,
                        QgsProcessingParameterNumber)
 from qgis.PyQt.QtCore import QCoreApplication
+import re
 from .handleCreateDB import HandleCreateDB
 
 
@@ -78,13 +79,12 @@ class CreateDatabase(QgsProcessingAlgorithm):
                 defaultValue=5432
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.BDNAME,
-                self.tr('Insira o nome do banco de dados a ser gerado'),
-            )
+        BDNAME = ValidationString(
+            self.BDNAME,
+            description=self.tr(
+                'Insira o nome do banco')
         )
+        self.addParameter(BDNAME)
 
         self.addParameter(
             QgsProcessingParameterString(
@@ -173,3 +173,9 @@ class CreateDatabase(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return CreateDatabase()
+
+
+class ValidationString(QgsProcessingParameterString):
+    def checkValueIsAcceptable(self, value, context=None):
+        if re.match(r"^[A-Za-z0-9]+$", value):
+            return True

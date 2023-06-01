@@ -152,6 +152,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
 
         db_string = "PG:dbname={} host={} port={} user={} password={}".format(
             bdname, server_ip, port, user, password)
+    
 
         multilinestring = '''id,
   cod_ponto,

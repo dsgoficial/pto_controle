@@ -505,7 +505,7 @@ class EvaluateStructure():
                     self.rinex_data[key]["cod_ponto_2"]
                 except KeyError:
                     self.rinex_data[key]["cod_ponto_2"] = self.rinex_data[key]["cod_ponto_1"]
-                    erros.append(u"{0}: Verifique os valores de MARKER NAME e MARKER NUMBER do arquivo RINEX do ponto {1}.".format(
+                    erros.append(u"{0}: Verifique os valores de MARKER NAME e MARKER NUMBER do arquivo RINEX do ponto {1}. Eles devem ser iguais.".format(
                         pasta, self.csv_data[key]["cod_ponto"]))
                 if (self.rinex_data[key]["cod_ponto_1"] != self.csv_data[key]["cod_ponto"] or self.rinex_data[key]["cod_ponto_2"] != self.csv_data[key]["cod_ponto"]):
                     erros.append(u"{0}: O arquivo RINEX do ponto {1} está com o nome de ponto incorreto.".format(
