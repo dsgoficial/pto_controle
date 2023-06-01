@@ -79,7 +79,6 @@ class HandleRefreshFromPPP():
                 lat = re.findall(r'-?[0-9]{2} [0-9]{2} [0-9]{2},[0-9]{4}', page_content[13])[0]
                 lon = re.findall(r'-?[0-9]{2} [0-9]{2} [0-9]{2},[0-9]{4}', page_content[14])[0]
                 point['latitude'], point['longitude'] = self.evaluateCoords(lat, lon)
-                print(point)
                 self.updateDB(point)
 
     def updateDB(self, point):

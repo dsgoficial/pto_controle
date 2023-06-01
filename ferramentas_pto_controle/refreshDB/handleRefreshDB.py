@@ -60,7 +60,6 @@ class HandleRefreshDB():
                 pasta = root.split(os.sep)[-1]
                 if re.search(r'.[0-9][0-9]o|O$', f) and pasta == '2_RINEX':
                     with open(os.path.join(root, f)) as rinex:
-                        print(f)
                         lines = rinex.readlines()
                         for line in lines:
                             key = line[60:].strip()
