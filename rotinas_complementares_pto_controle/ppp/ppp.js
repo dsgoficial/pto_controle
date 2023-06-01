@@ -76,21 +76,25 @@ zips.forEach(zip => {
   "Download: " + zip.split("\\")[zip.split("\\").length - 1].slice(0, -4);
   
   test(name, async t => {
+     try {
       await t
-        // .click(Selector("a").withText("Processar os dados"))
-        .typeText(
-          Selector("input").withAttribute("name", "email"),
-          process.argv[8]
-        )
-        .setFilesToUpload(
-          Selector("input").withAttribute("name", "arquivo"),
-          zip
-        )
-        .click(Selector("input").withAttribute("value", "Processar"))
-        .wait(30000)
-        .switchToIframe("#iframe_resultado")
-        .wait(30000)
-        .click(Selector("body > div > button"))
-        .wait(30000);
+      // .click(Selector("a").withText("Processar os dados"))
+      .typeText(
+        Selector("input").withAttribute("name", "email"),
+        process.argv[8]
+      )
+      .setFilesToUpload(
+        Selector("input").withAttribute("name", "arquivo"),
+        zip
+      )
+      .click(Selector("input").withAttribute("value", "Processar"))
+      .wait(30000)
+      .switchToIframe("#iframe_resultado")
+      .wait(30000)
+      .click(Selector("body > div > button"))
+      .wait(30000);
+     } catch (error) {
+      console.log(error)
+     }
   });
 });

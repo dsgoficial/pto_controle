@@ -28,12 +28,11 @@ def criaPastas(pasta):
     date_regex = r"\d{4}-\d{2}-\d{2}"
     for root, dirs, files in os.walk(pasta):
         if re.match(pto_regex, Path(root).parts[-1]):
-            if not "6_Processamento_PPP" in dirs:
-                os.mkdir(os.path.join(root, "6_Processamento_PPP"))
-
+            if not "6_Processamento" in dirs:
+                os.mkdir(os.path.join(root, "6_Processamento"))
 
 def zipaPPP(pasta):
-    to_zip = [x for x in Path(pasta).rglob('2_RINEX/*') if re.match(r'\.\d\d[on]',  x.suffix)]
+    to_zip = [x for x in Path(pasta).rglob('2_RINEX/*') if re.match(r'\.\d\d[on|ON]',  x.suffix)]
     points = set([x.parts[-3] for x in to_zip])
     for point in points:
         filtered = list(filter(lambda x: x.stem == point,to_zip))

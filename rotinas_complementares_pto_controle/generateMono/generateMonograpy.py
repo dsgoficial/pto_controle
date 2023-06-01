@@ -22,6 +22,13 @@ class GenerateMonograpy():
             self.settings = json.load(setting)
         self.points = []
         # processImages(self.path)
+
+    def updateDB(self):
+        with self.conn.cursor() as cursor:
+            cursor.execute(u'''
+            UPDATE bpc.ponto_controle_p SET possui_monografia = true
+            ''')
+            self.conn.commit()
     
     def fetchAll(self):
         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
@@ -94,7 +101,6 @@ class GenerateMonograpy():
         pto['sigmaXY'] = pto['precisao_horizontal_esperada']
         pto['sigmaZ'] = pto['precisao_vertical_esperada']
         pto['m'] = 'Sim' if pto['materializado'] else 'Não'
-        # por algum bug no odt/secretary não dá pra replicar imagem (no caso a assinatura, que está no rodapé)
         pto['signature'] = self.settings['signature']
         pto['signature1'] = self.settings['signature']
         pto['signature2'] = self.settings['signature']
@@ -150,3 +156,4 @@ if __name__ == "__main__":
     generate = GenerateMonograpy(*sys.argv[1:])
     generate.getListOfPoints()
     generate.getFoldersFromStrucuture()
+    generate.updateDB()

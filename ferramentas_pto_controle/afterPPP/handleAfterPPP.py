@@ -50,8 +50,8 @@ def organizePPP(estrutura_pasta, pasta_ppp):
     for root, dirs, files in os.walk(estrutura_pasta):
         rootname = Path(root).parts
         if search(pto_regex, rootname[-1]):
-            if "6_Processamento_PPP" in dirs:
-                ptos_estrutura[rootname[-1]] = os.path.join(root, "6_Processamento_PPP")
+            if "6_Processamento" in dirs:
+                ptos_estrutura[rootname[-1]] = os.path.join(root, "6_Processamento")
 
     for zip_pto in zipfiles:
         if zip_pto in ptos_estrutura:

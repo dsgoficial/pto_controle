@@ -104,7 +104,7 @@ class DistributeImages(QgsProcessingAlgorithm):
         handle.create_folder()
         handle.distribute_images()
 
-        return {self.OUTPUT: ''}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """

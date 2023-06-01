@@ -88,7 +88,8 @@ class RefreshDB(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.PORT,
-                self.tr('Insira a porta')
+                self.tr('Insira a porta'),
+                defaultValue = 5432
             )
         )
 
@@ -133,7 +134,7 @@ class RefreshDB(QgsProcessingAlgorithm):
         points2 = refresh.getCoordsFromRinex(points)
         refresh.upsert(points2)
 
-        return {self.OUTPUT: ''}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """
@@ -175,7 +176,7 @@ class RefreshDB(QgsProcessingAlgorithm):
         """
         return self.tr('''
         Esta ferramenta atualizará o banco de dados de pontos de controle.
-        Utilizando como referência uma pasta devidamente validada pela ferramenta 2 - Data Validation, serão inseridos os pontos de controle localizados dentro da pasta.
+        Utilizando como referência uma pasta devidamente validada pela ferramenta 2 - Validação da Estrutura de Pastas, serão inseridos os pontos de controle localizados dentro da pasta.
         Os parâmetros necessários são:
         - Pasta com a estrutura de pontos de controle (deve estar validada de pela ferramenta Data Validation)
         - Porta (geralmente 5432 para PostgreSQL)

@@ -34,6 +34,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterString,
                        QgsProcessingParameterNumber)
 from qgis.PyQt.QtCore import QCoreApplication
+import re
 from .handleCreateDB import HandleCreateDB
 
 
@@ -74,16 +75,16 @@ class CreateDatabase(QgsProcessingAlgorithm):
                 self.PORT,
                 self.tr('Insira a porta'),
                 minValue=0,
-                maxValue=9999
+                maxValue=9999,
+                defaultValue=5432
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.BDNAME,
-                self.tr('Insira o nome do banco de dados a ser gerado'),
-            )
+        BDNAME = ValidationString(
+            self.BDNAME,
+            description=self.tr(
+                'Insira o nome do banco')
         )
+        self.addParameter(BDNAME)
 
         self.addParameter(
             QgsProcessingParameterString(
@@ -115,7 +116,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         db = HandleCreateDB(server_ip, port, bdname, user, password)
         db.create()
 
-        return {self.OUTPUT: 'Processamento concluído'}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """
@@ -159,7 +160,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         Esta ferramenta irá criar o banco de dados de pontos de controle necessário para a gerência do projeto.
         Certifique-se que o usuário utilizado possui permissão para criar bancos!
         Os parâmetros necessários são:
-        - IP da máquina (se trabalhando localmente utilizar localhost)
+        - IP da máquina que armazenará o banco (se trabalhando localmente utilizar localhost)
         - Porta (geralmente 5432 para PostgreSQL)
         - Nome do banco a ser gerado
         - Usuário do PostgreSQL
@@ -172,3 +173,9 @@ class CreateDatabase(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return CreateDatabase()
+
+
+class ValidationString(QgsProcessingParameterString):
+    def checkValueIsAcceptable(self, value, context=None):
+        if re.match(r"^[A-Za-z0-9]+$", value):
+            return True

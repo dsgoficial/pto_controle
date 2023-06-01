@@ -38,11 +38,12 @@ from pathlib import Path
 
 class HandleLoadToBPC():
 
-    def __init__(self, folderin, folderout):
+    def __init__(self, folderin, folderout, process_type):
         self.folder = folderin
         self.output = folderout
+        self.process_type = process_type
 
-    def getWhereClausule(self, temp_folder):
+    def getWhereClausule(self, temp_folder, process_type):
         '''
         Reads points from CSV and prompts the generation of zipfile.
         Returns WHERE clausule in the end
@@ -51,14 +52,14 @@ class HandleLoadToBPC():
         for root, dirs, files in os.walk(self.folder):
             for f in files:
                 if f.endswith(".csv"):
-                    self.gerenatezip(Path(root), temp_folder)
+                    self.gerenatezip(Path(root), temp_folder, process_type)
                     with open(os.path.join(root, f)) as csv_file:
                         csv_reader = csv.DictReader(csv_file)
                         for row in csv_reader:
                             points += "'{}',".format(row['cod_ponto'])
         return "WHERE cod_ponto IN ({})".format(points[:-1])
 
-    def gerenatezip(self, destination_dir_path, temp_folder):
+    def gerenatezip(self, destination_dir_path, temp_folder, process_type):
         '''
         Creates an expression generator to select folders with points, then
         checks the existence of PPP files and generates the zips
@@ -69,8 +70,7 @@ class HandleLoadToBPC():
             "2_RINEX": lambda x: f"{name}_RINEX.zip",
             "8_Monografia": lambda x: f"{name}_MONOGRAFIA.pdf",
             "7_Imagens_Monografia": lambda x: f"{name}_AEREA.jpg",
-            "6_Processamento_PPP": lambda x: f"{name}_PROCESSAMENTO.pdf",
-            "6_Processamento_RTE": lambda x: f"{name}_PROCESSAMENTO.pdf",
+            "6_Processamento": lambda x: f"{name}_PROCESSAMENTO.pdf",
             
         }
         for point in points:
@@ -81,14 +81,15 @@ class HandleLoadToBPC():
                 point / '8_Monografia' / '{}.pdf'.format(name),
                 point / '7_Imagens_Monografia' / '{}_AEREA.jpg'.format(name)
             ]
-            path_ppp = point / '6_Processamento_PPP'
-            for child in path_ppp.iterdir():
-                if child.suffix == '.pdf':
-                    files.append(child)
-            path_rte = point / '6_Processamento_RTE'
-            for child in path_rte.iterdir():
-                if child.suffix == '.pdf':
-                    files.append(child)
+            path_process = point / '6_Processamento'
+            if process_type == 0:
+                for child in path_process.iterdir():
+                    if child.suffix == '.pdf':
+                        files.append(child)
+            if process_type == 1:
+                for child in path_process.iterdir():
+                    if child.suffix == '.csv':
+                        files.append(child)
             temp_destination_files = []
             for file in files:
                 p = Path(file)
