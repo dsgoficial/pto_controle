@@ -24,28 +24,13 @@ from pathlib import Path
 import shutil
 import sys
 
-def extraiZip(zip, estrutura):
-    _files = [Path(estrutura / x) for x in Path(estrutura).iterdir()]
-    for item in _files:
-        if item.is_file():
-            item.unlink()
-        elif item.is_dir():
-            shutil.rmtree(item)
-    with zipfile.ZipFile(zip, 'r') as zip_ref:
-        zip_ref.extractall(estrutura)
-    if len(os.listdir(estrutura)) == 1:
-        source = os.path.join(estrutura, os.listdir(estrutura)[0])
-        if os.path.isdir(source):
-            for f in os.listdir(source):
-                shutil.move(os.path.join(source, f), estrutura)
-            shutil.rmtree(source)
-
-
 def organizePPP(estrutura_pasta, pasta_ppp):
+    error = True
     errors = []
     pto_regex = r"^[A-Z][A-Z]-(HV|Base|BASE)-[1-9]+[0-9]*$"
-    zipfiles = {f.split("_")[1][:-4]: os.path.join(pasta_ppp, f) for f in os.listdir(pasta_ppp) if os.path.isfile(
-        os.path.join(pasta_ppp, f)) and f.endswith('.zip') and len(f.split("_")) == 4 and search(pto_regex, f.split("_")[1][:-4])}
+    zipfiles = [os.path.join(pasta_ppp, f) for f in os.listdir(pasta_ppp) if "_zipAllRinex.zip_" in f]
+    nameFolder = zipfiles[0].split("\\")[-1][:-4]
+
     ptos_estrutura = {}
     for root, dirs, files in os.walk(estrutura_pasta):
         rootname = Path(root).parts
@@ -53,14 +38,27 @@ def organizePPP(estrutura_pasta, pasta_ppp):
             if "6_Processamento" in dirs:
                 ptos_estrutura[rootname[-1]] = os.path.join(root, "6_Processamento")
 
-    for zip_pto in zipfiles:
-        if zip_pto in ptos_estrutura:
-            extraiZip(zipfiles[zip_pto], ptos_estrutura[zip_pto])
+    extractAllRinexPath = os.path.join(pasta_ppp, "extractAllRinex")
 
-    if set(zipfiles.keys()) - set(ptos_estrutura.keys()):
-        errors.append('Pontos nao encontrados na estrutura: {}'.format(repr(list(set(zipfiles.keys()) - set(ptos_estrutura.keys())))))
-    if set(ptos_estrutura.keys()) - set(zipfiles.keys()):
-        errors.append('Pontos que não possuem zip: {}'.format(repr(list(set(ptos_estrutura.keys()) - set(zipfiles.keys())))))
+    os.mkdir(extractAllRinexPath)
+    with zipfile.ZipFile(zipfiles[0], 'r') as zip_ref:
+        zip_ref.extractall(extractAllRinexPath)
+
+    for pto in ptos_estrutura:
+        for root, dirs, files in os.walk(os.path.join(extractAllRinexPath, f"{nameFolder}")):
+            for file in files:
+                if file.split(".")[0] != pto:
+                    continue
+                shutil.move(os.path.join(root, file), ptos_estrutura[pto])
+                error = False
+    
+    shutil.rmtree(os.path.join(pasta_ppp, "extractAllRinex"))
+    
+    if not error:
+        errors.append("Sucesso: Procedimento pós PPP realizado com sucesso!")
+    else:
+        errors.append("Falhou: O procedimento pós PPP não foi realizado!")
+    
 
     return errors
 

@@ -41,3 +41,10 @@ def zipaPPP(pasta):
             with zipfile.ZipFile(write_path, "w", zipfile.ZIP_DEFLATED) as zf:
                 for item in filtered:
                     zf.write(item, item.name)
+
+def zipAllFileObservations(path, pasta):
+    to_zip = [x for x in Path(pasta).rglob('2_RINEX/*') if re.match(r'\.\d\d[o|O]', x.suffix)]
+    write_path = path + '/zipAllRinex.zip'
+    with zipfile.ZipFile(write_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for file in to_zip:
+            zf.write(file, file.name)

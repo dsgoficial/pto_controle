@@ -33,7 +33,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFile)
 from qgis.PyQt.QtCore import QCoreApplication
-from .handleBeforePPP import criaPastas, zipaPPP
+from .handleBeforePPP import criaPastas, zipaPPP, zipAllFileObservations
 
 
 class BeforePPP(QgsProcessingAlgorithm):
@@ -52,6 +52,7 @@ class BeforePPP(QgsProcessingAlgorithm):
 
     OUTPUT = 'OUTPUT'
     FOLDER = 'FOLDER'
+    ALL_RINEX = 'ALL_RINEX'
 
     def initAlgorithm(self, config):
         """
@@ -66,13 +67,23 @@ class BeforePPP(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterFile(
+                self.ALL_RINEX,
+                self.tr('Selecionar path que vai criar a pasta zipada com o conjunto de RINEX'),
+                behavior=QgsProcessingParameterFile.Folder
+            )
+        )
+
     def processAlgorithm(self, parameters, context, feedback):
         """
         Here is where the processing itself takes place.
         """
         folder = self.parameterAsFile(parameters, self.FOLDER, context)
+        pathMakeZip = self.parameterAsFile(parameters, self.ALL_RINEX, context)
         criaPastas(folder)
         zipaPPP(folder)
+        zipAllFileObservations(pathMakeZip, folder)
 
         return {self.OUTPUT: 'Processamento Concluído'}
 
