@@ -295,6 +295,11 @@ CREATE TABLE bpc.ponto_controle_p(
   numero_fotos SMALLINT,
   possui_croqui BOOLEAN NOT NULL DEFAULT TRUE,
   possui_arquivo_rastreio BOOLEAN NOT NULL DEFAULT TRUE,
+  endereco_imagem_lateral_1 VARCHAR(255),
+  endereco_imagem_lateral_2 VARCHAR(255),
+  endereco_imagem_lateral_3 VARCHAR(255),
+  endereco_imagem_lateral_4 VARCHAR(255),
+  endereco_imagem_aerea VARCHAR(255),
   geom geometry(POINT,4674) NOT NULL
 );
 CREATE INDEX ponto_controle_p_geom ON bpc.ponto_controle_p USING gist (geom);

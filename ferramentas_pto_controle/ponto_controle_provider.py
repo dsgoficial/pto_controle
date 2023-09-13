@@ -42,6 +42,7 @@ from .afterPPP.afterPPP import AfterPPP
 from .distributeImages.distributeImages import DistributeImages
 from .loadToBPC.loadToBPC import LoadToBPC
 from .refreshFromPPPRTE.refreshFromPPPRTE import RefreshFromPPPRTE
+from .pathImageInAttribute.pathImageInAttribute import PathImageInAttribute
 
 
 class PontoControleProvider(QgsProcessingProvider):
@@ -73,6 +74,7 @@ class PontoControleProvider(QgsProcessingProvider):
         self.addAlgorithm(DistributeImages())
         self.addAlgorithm(LoadToBPC())
         self.addAlgorithm(RefreshFromPPPRTE())
+        self.addAlgorithm(PathImageInAttribute())
 
     def id(self):
         """
