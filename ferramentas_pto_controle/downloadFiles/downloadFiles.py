@@ -180,15 +180,14 @@ class DownloadFiles(QgsProcessingAlgorithm):
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta ferramenta irá criar o banco de dados de pontos de controle necessário para a gerência do projeto.
-        Certifique-se que o usuário utilizado possui permissão para criar bancos!
-        Os parâmetros necessários são:
-        - IP da máquina que armazenará o banco (se trabalhando localmente utilizar localhost)
-        - Porta (geralmente 5432 para PostgreSQL)
-        - Nome do banco a ser gerado
-        - Usuário do PostgreSQL
-        - Senha do PostgreSQL
-        Caso já exista um banco de dados com o mesmo nome a ferramenta não irá sobrescrevê-lo.''')
+        Esta ferramenta está responsável por realizar o download dos arquivos que o usuário
+        desejar, dos pontos de controle que estão selecionado, os arquivos
+        que o usuário poderá realizar o download são:
+        - Fotografias laterais
+        - Fotografia aérea
+        - Monografia
+        - Croqui
+        - RINEX''')
         
 
     def tr(self, string):
