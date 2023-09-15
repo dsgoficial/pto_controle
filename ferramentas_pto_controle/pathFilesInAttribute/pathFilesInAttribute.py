@@ -6,9 +6,9 @@
                                  A QGIS plugin
  Ferramentas para a gerência de pontos de controle
                               -------------------
-        begin                : 2019-11-18
-        copyright            : (C) 2019 by 1CGEO/DSG
-        email                : eliton.filho@eb.mil.br
+        begin                : 2023-09-14
+        copyright            : (C) 2023 by 1CGEO/DSG
+        email                : matheus.silva@ime.eb.br
  ***************************************************************************/
 
 /***************************************************************************
@@ -22,8 +22,8 @@
 """
 
 __author__ = '1CGEO/DSG'
-__date__ = '2019-11-18'
-__copyright__ = '(C) 2019 by 1CGEO/DSG'
+__date__ = '2023-09-14'
+__copyright__ = '(C) 2023 by 1CGEO/DSG'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -36,10 +36,10 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterNumber)
 from qgis.PyQt.QtCore import QCoreApplication
 import re
-from .handlePathImageInAttribute import HandleUpdateFieldWithPathImage
+from .handlePathFilesInAttribute import HandleUpdateFieldWithPathFiles
 
 
-class PathImageInAttribute(QgsProcessingAlgorithm):
+class PathFilesInAttribute(QgsProcessingAlgorithm):
     """
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -124,10 +124,10 @@ class PathImageInAttribute(QgsProcessingAlgorithm):
         user = self.parameterAsString(parameters, self.USER, context)
         password = self.parameterAsString(parameters, self.PASSWORD, context)
 
-        db = HandleUpdateFieldWithPathImage(server_ip, port, bdname, user, password)
-        db.updateDBPathImages(folderIn)
+        db = HandleUpdateFieldWithPathFiles(server_ip, port, bdname, user, password)
+        msg = db.updateDBPathFiles(folderIn)
 
-        return {self.OUTPUT: 'Processamento Concluído'}
+        return {self.OUTPUT: msg}
 
     def name(self):
         """
@@ -137,7 +137,7 @@ class PathImageInAttribute(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '11 - Inserir nos atributos os caminhos das imagens'
+        return '11 - Inserir nos atributos os caminhos dos arquivos'
 
     def displayName(self):
         """
@@ -183,7 +183,7 @@ class PathImageInAttribute(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return PathImageInAttribute()
+        return PathFilesInAttribute()
 
 
 class ValidationString(QgsProcessingParameterString):

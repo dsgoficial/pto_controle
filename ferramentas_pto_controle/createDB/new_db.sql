@@ -300,6 +300,9 @@ CREATE TABLE bpc.ponto_controle_p(
   endereco_imagem_lateral_3 VARCHAR(255),
   endereco_imagem_lateral_4 VARCHAR(255),
   endereco_imagem_aerea VARCHAR(255),
+  endereco_monografia VARCHAR(255),
+  endereco_croqui VARCHAR(255),
+  endereco_rinex VARCHAR(255),
   geom geometry(POINT,4674) NOT NULL
 );
 CREATE INDEX ponto_controle_p_geom ON bpc.ponto_controle_p USING gist (geom);
