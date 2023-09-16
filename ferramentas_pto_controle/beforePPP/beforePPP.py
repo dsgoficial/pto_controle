@@ -70,7 +70,7 @@ class BeforePPP(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.ALL_RINEX,
-                self.tr('Selecionar path que vai criar a pasta zipada com o conjunto de RINEX'),
+                self.tr('Selecionar a pasta onde será salvo os arquivos para processamento no PPP-IBGE'),
                 behavior=QgsProcessingParameterFile.Folder
             )
         )
@@ -127,9 +127,11 @@ class BeforePPP(QgsProcessingAlgorithm):
         """
         return self.tr('''
         Esta ferramenta cria a pasta 6_Processamento na estrutura de pastas e compacta os arquivos RINEX no formato zip.
-        Para o correto funcionamento desta ferramenta é indispensável que as pastas estejam devidamente validadas pela rotina 2- Validar a estrutura de pastas .
+        Além disso, compacta todos os arquivos a serem processados em um único arquivo .zip em uma pasta escolhida para ser processado manualmente no PPP-IBGE.
+        Para o correto funcionamento desta ferramenta é indispensável que as pastas estejam devidamente validadas pela rotina 02 - Validar a estrutura de pastas .
         Os parâmetros necessários são:
         - Pasta com a estrutura de pontos de controle
+        - Pasta para salvar o .zip conjunto para processamento no PPP-IBGE
         ''')
 
     def tr(self, string):
