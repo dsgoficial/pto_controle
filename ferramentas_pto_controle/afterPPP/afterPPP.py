@@ -82,7 +82,7 @@ class AfterPPP(QgsProcessingAlgorithm):
         folder_out = self.parameterAsFile(parameters, self.FOLDEROUT, context)
         errors = organizePPP(folder_in, folder_out)
 
-        return {self.OUTPUT: errors}
+        return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """

@@ -6,7 +6,7 @@
     "default": {
         "modelo_gps" : "TRIMBLE",
         "modelo_antena" : "TRIMBLE",
-        "orgao_executante" : "1° CGEO",
+        "orgao_executante" : "DSG/OMDS",
         "projeto" : "Mapeamento de Interesse da Força",
         "cpf_engenheiro_responsavel": "123.456.789-00",
         "engenheiro_responsavel": "Nome",
