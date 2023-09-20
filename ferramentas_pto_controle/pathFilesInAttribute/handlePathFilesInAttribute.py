@@ -69,8 +69,8 @@ class HandleUpdateFieldWithPathFiles():
         return dictCodPontoMono
     
     def getPathImages(self, folder):
-        img_laterais = [x for x in Path(folder).rglob('3_Foto_Rastreio/*') if re.match("\.jpg", x.suffix)]
-        img_aereas = [x for x in Path(folder).rglob('7_Imagens_Monografia/*') if re.match("\.jpg", x.suffix) and x.parts[-1].split("_")[1].split(".")[0] == "AEREA"]
+        img_laterais = [x for x in Path(folder).rglob('3_Foto_Rastreio/*') if re.match(r"(\.jpg|\.jpeg|\.JPEG|\.JPG|\.PNG|\.png)", x.suffix)]
+        img_aereas = [x for x in Path(folder).rglob('7_Imagens_Monografia/*') if re.match(r"(\.jpg|\.jpeg|\.JPEG|\.JPG|\.PNG|\.png)", x.suffix) and x.parts[-1].split("_")[1].split(".")[0] == "AEREA"]
 
         dictCodPontoImages = defaultdict(list)
 
