@@ -28,8 +28,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 class HandleDownloadFiles():
     def downloadSelectFileOfSelectFeatures(self, layer: QgsVectorLayer, folderOut, boolMono, boolCroqui, boolVista, boolRinex, boolFotografias):
         selectedFeatures = layer.getSelectedFeatures()
-        
-        if layer.selectedFeatureCount == 0:
+        msg = ""
+        if layer.selectedFeatureCount() == 0:
             msg = "Não há nenhum ponto de controle selecionado."
             return msg
         
