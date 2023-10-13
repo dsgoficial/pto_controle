@@ -32,6 +32,7 @@ class HandleRefreshFromPPP():
                 point = {}
                 page_content = txtfile.readlines()
                 point['altitude_geometrica'] = re.findall(r'[0-9]{0,}.{0,1}[0-9]{1,},[0-9]{1,2}', page_content[15])
+                point['altitude_geometrica'] = str(point['altitude_geometrica']).replace(".", "")
                 point['altitude_geometrica'] = str(point['altitude_geometrica']).replace(",", ".")
                 point['altitude_geometrica'] = str(point['altitude_geometrica']).replace("[", "")
                 point['altitude_geometrica'] = str(point['altitude_geometrica']).replace("]", "")
