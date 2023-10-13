@@ -1,7 +1,7 @@
 {
     "validacao": {
         "alt_max_ant" : 9,
-        "dur_min" : 20
+        "dur_min" : 40
     },
     "default": {
         "modelo_gps" : "TRIMBLE",
