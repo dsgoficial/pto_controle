@@ -219,14 +219,38 @@ class LoadToBPC(QgsProcessingAlgorithm):
   (fim_rastreio - inicio_rastreio) as tempo_rastreio,
   geom
 '''
-
+        clausule_validate_bpc = '''
+  AND tipo_situacao NOT IN (9999)
+  AND sistema_geodesico NOT IN (9999)
+  AND referencial_altim NOT IN (9999)
+  AND referencia_medicao_altura NOT IN (9999)
+  AND tipo_medicao_altura NOT IN (9999)
+  AND tipo_ref NOT IN (9999)
+  AND classificacao_ponto NOT IN (9999)
+  AND data_rastreio IS NOT NULL
+  AND situacao_marco NOT IN (9999)
+  AND metodo_posicionamento NOT IN (9999)
+  AND tipo_pto_ref_geod_topo NOT IN (9999)
+  AND tipo_marco_limite NOT IN (9999)
+  AND rede_referencia NOT IN (9999)
+  AND referencial_grav NOT IN (9999)
+  AND mascara_elevacao IS NOT NULL
+  AND data_processamento IS NOT NULL
+  AND inicio_rastreio IS NOT NULL
+  AND fim_rastreio IS NOT NULL
+  AND engenheiro_responsavel IS NOT NULL
+'''
+        where_clausule = where_clausule + clausule_validate_bpc
         sql_string = f"SELECT {multilinestring} FROM bpc.ponto_controle_p {where_clausule}"
 
         gpkg_path = Path(folder_out, 'pontos_exportados.gpkg')
 
         subprocess.run(["ogr2ogr", "-f", "GPKG", f"{gpkg_path}", f"{db_string}", "-sql", f"{sql_string}", "-nln", "pontos_exportados"])
 
-        return {self.OUTPUT: 'Processamento Concluído'}
+        if process_type == 0:
+            return {self.OUTPUT: 'Processamento Concluído. Pontos não exportados para Geopackage podem ter apresentado inconsistências no metadado, consulte o banco para verificar as informações.'}
+        else:
+            return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
         """
@@ -250,7 +274,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pós-processamento")
 
     def groupId(self):
         """
@@ -260,15 +284,14 @@ class LoadToBPC(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "posprocessamento"
 
     def shortHelpString(self):
         """
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta ferramenta gera os insumos necessários para carregamento no BPC: o arquivo GeoPackage o(s) arquivo(s) zipados.
-        Note que é necessário a execução da rotina de geração de monografia, uma vez que a monografia é necessária no zip a ser gerado.
+        Esta ferramenta gera os insumos necessários para carregamento no BPC: o arquivo GeoPackage e o(s) arquivo(s) zipados.
         ''')
 
     def tr(self, string):

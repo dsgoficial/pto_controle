@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 /***************************************************************************
  PontoControle
@@ -79,6 +77,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
                 defaultValue=5432
             )
         )
+        
         BDNAME = ValidationString(
             self.BDNAME,
             description=self.tr(
@@ -140,7 +139,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pré-processamento")
 
     def groupId(self):
         """
@@ -150,7 +149,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "preprocessamento"
 
     def shortHelpString(self):
         """
@@ -158,7 +157,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         """
         return self.tr('''
         Esta ferramenta irá criar o banco de dados de pontos de controle necessário para a gerência do projeto.
-        Certifique-se que o usuário utilizado possui permissão para criar bancos!
+        Certifique-se que o usuário utilizado possui permissão para criar bancos.
         Os parâmetros necessários são:
         - IP da máquina que armazenará o banco (se trabalhando localmente utilizar localhost)
         - Porta (geralmente 5432 para PostgreSQL)
@@ -167,13 +166,11 @@ class CreateDatabase(QgsProcessingAlgorithm):
         - Senha do PostgreSQL
         Caso já exista um banco de dados com o mesmo nome a ferramenta não irá sobrescrevê-lo.''')
         
-
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
         return CreateDatabase()
-
 
 class ValidationString(QgsProcessingParameterString):
     def checkValueIsAcceptable(self, value, context=None):

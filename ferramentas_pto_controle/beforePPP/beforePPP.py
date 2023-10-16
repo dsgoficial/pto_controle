@@ -109,7 +109,7 @@ class BeforePPP(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pré-processamento")
 
     def groupId(self):
         """
@@ -119,16 +119,16 @@ class BeforePPP(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "preprocessamento"
 
     def shortHelpString(self):
         """
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta ferramenta cria a pasta 6_Processamento na estrutura de pastas e compacta os arquivos RINEX no formato zip.
+        Esta ferramenta cria a pasta 6_Processamento na estrutura de pastas e compacta os arquivos RINEX no formato zip dentro da pasta 2_RINEX.
         Além disso, compacta todos os arquivos a serem processados em um único arquivo .zip em uma pasta escolhida para ser processado manualmente no PPP-IBGE.
-        Para o correto funcionamento desta ferramenta é indispensável que as pastas estejam devidamente validadas pela rotina 02 - Validar a estrutura de pastas .
+        Para o correto funcionamento desta ferramenta é as pastas devem estar devidamente validadas.
         Os parâmetros necessários são:
         - Pasta com a estrutura de pontos de controle
         - Pasta para salvar o .zip conjunto para processamento no PPP-IBGE

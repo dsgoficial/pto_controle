@@ -106,7 +106,7 @@ class AfterPPP(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pós-processamento")
 
     def groupId(self):
         """
@@ -116,14 +116,14 @@ class AfterPPP(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "posprocessamento"
 
     def shortHelpString(self):
         """
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta ferramenta descompacta os arquivos PPP no formato zip e distribui os arquivos na estrutura padrão de pastas de ponto de controle.
+        Esta ferramenta descompacta os arquivos PPP no formato .zip e distribui os arquivos na estrutura padrão de pastas de ponto de controle.
         Os parâmetros necessários são:
         - Pasta com a estrutura de pontos de controle
         - Pasta com os arquivos PPP no formato zip

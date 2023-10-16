@@ -151,7 +151,7 @@ class PathFilesInAttribute(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Gerenciar Pontos")
 
     def groupId(self):
         """
@@ -161,15 +161,14 @@ class PathFilesInAttribute(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "gerenciamento"
 
     def shortHelpString(self):
         """
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta ferramenta está responável por atualizar os atributos no banco de dados
-        dos paths dos seguintes arquivos:
+        Esta ferramenta atualiza os atributos no banco de dados com o caminho dos seguintes arquivos:
         - Fotografias laterais
         - Fotografia aérea
         - Monografia

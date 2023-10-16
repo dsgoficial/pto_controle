@@ -128,7 +128,7 @@ class DistributeImages(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pós-processamento")
 
     def groupId(self):
         """
@@ -138,7 +138,7 @@ class DistributeImages(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "posprocessamento"
 
     def shortHelpString(self):
         """
@@ -146,7 +146,6 @@ class DistributeImages(QgsProcessingAlgorithm):
         """
         return self.tr('''
         Esta ferramenta distribui as imagens aéreas aéreas dos pontos nas estruturas de pasta.
-        Note que esta rotina é necessária para a geração da monografia.
         ''')
 
     def tr(self, string):

@@ -177,7 +177,7 @@ class ValidatePoints(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pré-processamento")
 
     def groupId(self):
         """
@@ -187,7 +187,7 @@ class ValidatePoints(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "preprocessamento"
 
     def shortHelpString(self):
         """
@@ -201,7 +201,7 @@ class ValidatePoints(QgsProcessingAlgorithm):
         - Nome dos medidores separados por ; (não inserir espaços)
         - Data (no formato YYYY-MM-DD. Exemplo: 2019-08-30)
         - Fuso horário da região (geralmente -3)
-        - JSON com parâmetros de validação (verificar README em https://github.com/1cgeo/ferramentas_pto_controle para mais detalhes)
+        - JSON com parâmetros de validação (pasta arquivos, com modelo de .json a ser utilizado)
         - O arquivo no qual será escrito os problemas de validação
         ''')
 

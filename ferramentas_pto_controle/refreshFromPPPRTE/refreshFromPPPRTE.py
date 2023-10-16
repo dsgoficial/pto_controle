@@ -161,7 +161,7 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pós-processamento")
 
     def groupId(self):
         """
@@ -171,7 +171,7 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "posprocessamento"
 
     def shortHelpString(self):
         """
@@ -180,7 +180,7 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         return self.tr('''
         Esta rotina atualiza o banco de dados com os dados do PPP ou RTE. 
         Os parâmetros necessários para essa rotina são:
-        - Pasta com a estrutura de pontos de controle (deve estar validada de pela ferramenta de validação de pastas.)
+        - Pasta com a estrutura de pontos de controle, devidamente validada.
         - Parâmetros de conexão do banco:
             -- IP da máquina (se trabalhando localmente utilizar localhost)
             -- Porta (geralmente 5432 para PostgreSQL)

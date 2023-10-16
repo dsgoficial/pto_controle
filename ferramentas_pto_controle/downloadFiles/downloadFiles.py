@@ -163,7 +163,7 @@ class DownloadFiles(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Gerenciar Pontos")
 
     def groupId(self):
         """
@@ -173,16 +173,15 @@ class DownloadFiles(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "gerenciamento"
 
     def shortHelpString(self):
         """
         Retruns a short helper string for the algorithm
         """
         return self.tr('''
-        Esta ferramenta está responsável por realizar o download dos arquivos que o usuário
-        desejar, dos pontos de controle que estão selecionado, os arquivos
-        que o usuário poderá realizar o download são:
+        Esta ferramenta realiza o download dos arquivos das feições selecionadas do banco de ponto de controle.
+        Os arquivos que o usuário poderá realizar o download são:
         - Fotografias laterais
         - Fotografia aérea
         - Monografia

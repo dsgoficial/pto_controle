@@ -158,7 +158,7 @@ class RefreshDB(QgsProcessingAlgorithm):
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr(self.groupId())
+        return self.tr("Pré-processamento")
 
     def groupId(self):
         """
@@ -168,7 +168,7 @@ class RefreshDB(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return None
+        return "preprocessamento"
 
     def shortHelpString(self):
         """
@@ -176,14 +176,14 @@ class RefreshDB(QgsProcessingAlgorithm):
         """
         return self.tr('''
         Esta ferramenta atualizará o banco de dados de pontos de controle.
-        Utilizando como referência uma pasta devidamente validada pela ferramenta 2 - Validação da Estrutura de Pastas, serão inseridos os pontos de controle localizados dentro da pasta.
+        Utilizando como referência uma pasta validada na etapa anterior, serão inseridos no banco os dados prévios dos pontos de controle localizados dentro da pasta.
         Os parâmetros necessários são:
-        - Pasta com a estrutura de pontos de controle (deve estar validada de pela ferramenta Data Validation)
+        - Pasta com a estrutura de pontos de controle (já validada)
         - Porta (geralmente 5432 para PostgreSQL)
-        - Nome do banco a ser gerado
+        - Nome do banco criado para armazenar os pontos de controle
         - Usuário do PostgreSQL
         - Senha do PostgreSQL
-        Caso já exista um banco de dados com o mesmo nome a ferramenta não irá sobrescrevê-lo.''')
+        ''')
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

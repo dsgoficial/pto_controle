@@ -55,9 +55,17 @@ class HandleLoadToBPC():
                     self.gerenatezip(Path(root), temp_folder, process_type)
                     with open(os.path.join(root, f)) as csv_file:
                         csv_reader = csv.DictReader(csv_file)
-                        for row in csv_reader:
-                            points += "'{}',".format(row['cod_ponto'])
-        return "WHERE cod_ponto IN ({})".format(points[:-1])
+                        if process_type == 0:
+                            for row in csv_reader:
+                                if row['cod_ponto'].split('-')[1] != 'BASE':
+                                    points += "'{}',".format(row['cod_ponto'])
+                        if process_type == 1:
+                            for row in csv_reader:
+                                points += "'{}',".format(row['cod_ponto'])
+        if process_type == 0:
+            return "WHERE cod_ponto IN ({}) AND orbita = 4".format(points[:-1])
+        if process_type == 1:
+            return "WHERE cod_ponto IN ({})".format(points[:-1])
 
     def gerenatezip(self, destination_dir_path, temp_folder, process_type):
         '''
@@ -71,43 +79,43 @@ class HandleLoadToBPC():
             "8_Monografia": lambda x: f"{name}_MONOGRAFIA.pdf",
             "7_Imagens_Monografia": lambda x: f"{name}_AEREA.jpg",
             "6_Processamento": lambda x: f"{name}_PROCESSAMENTO.pdf",
-            
         }
+
         for point in points:
             name = point.name
-            files = [
-                point / '1_Formato_Nativo' / '{}.T01'.format(name),
-                point / '2_RINEX' / '{}.zip'.format(name),
-                point / '8_Monografia' / '{}.pdf'.format(name),
-                point / '7_Imagens_Monografia' / '{}_AEREA.jpg'.format(name)
-            ]
-            path_process = point / '6_Processamento'
-            if process_type == 0:
-                for child in path_process.iterdir():
-                    if child.suffix == '.pdf':
-                        files.append(child)
-            if process_type == 1:
-                for child in path_process.iterdir():
-                    if child.suffix == '.csv':
-                        files.append(child)
-            temp_destination_files = []
-            for file in files:
-                p = Path(file)
-                parent = p.parent.name
-                rename_lambda = rename_dict.get(parent, None)
-                if rename_lambda is None:
-                    continue
-                destination = Path(temp_folder) / rename_lambda(parent)
-                temp_destination_files.append(destination)
-                shutil.copy(file, destination)
-            with zipfile.ZipFile(
-                Path(self.output, '{}.zip'.format(name)), 'w', zipfile.ZIP_DEFLATED
-            ) as zf:
-                for item in temp_destination_files:
-                    if not item.exists():
+            if name.split('-')[1] != 'BASE':
+                files = [
+                    point / '2_RINEX' / '{}.zip'.format(name),
+                    point / '8_Monografia' / '{}.pdf'.format(name),
+                    point / '7_Imagens_Monografia' / '{}_AEREA.jpg'.format(name)
+                ]
+                path_process = point / '6_Processamento'
+                if process_type == 0:
+                    for child in path_process.iterdir():
+                        if child.suffix == '.pdf':
+                            files.append(child)
+                if process_type == 1:
+                    for child in path_process.iterdir():
+                        if child.suffix == '.csv':
+                            files.append(child)
+                temp_destination_files = []
+                for file in files:
+                    p = Path(file)
+                    parent = p.parent.name
+                    rename_lambda = rename_dict.get(parent, None)
+                    if rename_lambda is None:
                         continue
-                    if item == '.DS_Store':
-                        continue
-                    if '__MACOSX/' in str(Path(item).parent):
-                        continue
-                    zf.write(item, item.relative_to(os.path.dirname(item)))
+                    destination = Path(temp_folder) / rename_lambda(parent)
+                    temp_destination_files.append(destination)
+                    shutil.copy(file, destination)
+                with zipfile.ZipFile(
+                    Path(self.output, '{}.zip'.format(name)), 'w', zipfile.ZIP_DEFLATED
+                ) as zf:
+                    for item in temp_destination_files:
+                        if not item.exists():
+                            continue
+                        if item == '.DS_Store':
+                            continue
+                        if '__MACOSX/' in str(Path(item).parent):
+                            continue
+                        zf.write(item, item.relative_to(os.path.dirname(item)))
