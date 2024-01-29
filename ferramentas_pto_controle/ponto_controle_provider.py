@@ -44,6 +44,7 @@ from .loadToBPC.loadToBPC import LoadToBPC
 from .refreshFromPPPRTE.refreshFromPPPRTE import RefreshFromPPPRTE
 from .pathFilesInAttribute.pathFilesInAttribute import PathFilesInAttribute
 from .downloadFiles.downloadFiles import DownloadFiles
+from .checkNumber.checkNumber import CheckNumber
 
 
 class PontoControleProvider(QgsProcessingProvider):
@@ -77,6 +78,7 @@ class PontoControleProvider(QgsProcessingProvider):
         self.addAlgorithm(RefreshFromPPPRTE())
         self.addAlgorithm(PathFilesInAttribute())
         self.addAlgorithm(DownloadFiles())
+        self.addAlgorithm(CheckNumber())
 
     def id(self):
         """
