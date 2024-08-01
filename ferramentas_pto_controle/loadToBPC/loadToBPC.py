@@ -220,7 +220,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
   geom
 '''
         clausule_validate_bpc = '''
-  AND tipo_situacao NOT IN (9999)
+  AND tipo_situacao IN (3)
   AND sistema_geodesico NOT IN (9999)
   AND referencial_altim NOT IN (9999)
   AND referencia_medicao_altura NOT IN (9999)
