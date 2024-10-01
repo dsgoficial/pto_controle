@@ -99,28 +99,63 @@ class FixDateTrimble(QgsProcessingAlgorithm):
         for arquivoNome in os.listdir(FOLDERIN):
             arquivoEntradaCaminho = os.path.join(FOLDERIN, arquivoNome)
             abrevAno = DATE[2][-2:]
-            arquivoSaida = open(os.path.join(FOLDEROUT, f'{arquivoNome.split(".")[0]}.{abrevAno}o'), 'a')
             with open(arquivoEntradaCaminho) as f:
-                fimCabecalho = False
-                for linha in f.readlines():
-                    if (
-                        'TIME OF FIRST OBS' in linha
-                        or
-                        'TIME OF LAST OBS' in linha
-                    ):
-                        novaLinha = f'  {DATE[2]}    {DATE[1].ljust(2)}    {DATE[0].ljust(2)}' + linha[18:]
-                        arquivoSaida.write(novaLinha)
-                        continue
-                    if 'END OF HEADER' in linha:
-                        fimCabecalho = True
-                        arquivoSaida.write(linha)
-                        continue
-                    if not( fimCabecalho ) or not (linha[:2].count(' ') == 1):
-                        arquivoSaida.write(linha)
-                        continue
-                    novaLinha = f' {abrevAno} {DATE[1].ljust(2)} {DATE[0].ljust(2)}' + linha[9:]
-                    arquivoSaida.write(novaLinha)
-            arquivoSaida.close()
+                primeira_linha = f.readline()
+                if 'OBSERVATION DATA' in primeira_linha:
+                    arquivoSaida = open(os.path.join(FOLDEROUT, f'{arquivoNome.split(".")[0]}.{abrevAno}o'), 'a')
+                    with open(arquivoEntradaCaminho) as f:
+                        fimCabecalho = False
+                        for linha in f.readlines():
+                            if (
+                                'TIME OF FIRST OBS' in linha
+                                or
+                                'TIME OF LAST OBS' in linha
+                            ):
+                                novaLinha = f'  {DATE[2]}    {DATE[1].ljust(2)}    {DATE[0].ljust(2)}' + linha[18:]
+                                arquivoSaida.write(novaLinha)
+                                continue
+                            if 'END OF HEADER' in linha:
+                                fimCabecalho = True
+                                arquivoSaida.write(linha)
+                                continue
+                            if not( fimCabecalho ) or not (linha[:2].count(' ') == 1):
+                                arquivoSaida.write(linha)
+                                continue
+                            novaLinha = f' {abrevAno} {DATE[1].ljust(2)} {DATE[0].ljust(2)}' + linha[9:]
+                            arquivoSaida.write(novaLinha)
+                    arquivoSaida.close()
+                if 'NAVIGATION DATA' in primeira_linha:
+                    arquivoSaida = open(os.path.join(FOLDEROUT, f'{arquivoNome.split(".")[0]}.{abrevAno}n'), 'a')
+                    with open(arquivoEntradaCaminho) as f:
+                        fimCabecalho = False
+                        for linha in f.readlines():
+                            if 'END OF HEADER' in linha:
+                                fimCabecalho = True
+                                arquivoSaida.write(linha)
+                                continue
+                            if not( fimCabecalho ) or not (linha[:3].count(' ') <= 2 ):
+                                arquivoSaida.write(linha)
+                                continue
+
+                            novaLinha = linha[:2] + f' {abrevAno} {DATE[1].ljust(2)} {DATE[0].ljust(2)}' + linha[11:]
+                            arquivoSaida.write(novaLinha)
+                    arquivoSaida.close()
+                if 'METEOROLOGICAL DATA' in primeira_linha:
+                    arquivoSaida = open(os.path.join(FOLDEROUT, f'{arquivoNome.split(".")[0]}.{abrevAno}m'), 'a')
+                    with open(arquivoEntradaCaminho) as f:
+                        fimCabecalho = False
+                        for linha in f.readlines():
+                            if 'END OF HEADER' in linha:
+                                fimCabecalho = True
+                                arquivoSaida.write(linha)
+                                continue
+                            if not( fimCabecalho ) or not (linha[:3].count(' ') <= 2 ):
+                                arquivoSaida.write(linha)
+                                continue
+
+                            novaLinha = linha[:2] + f' {abrevAno} {DATE[1].ljust(2)} {DATE[0].ljust(2)}' + linha[11:]
+                            arquivoSaida.write(novaLinha)
+                    arquivoSaida.close()
 
         return {self.OUTPUT: ''}
 
