@@ -29,7 +29,7 @@ __revision__ = '$Format:%H$'
 
 import os
 import shutil
-from qgis.core import QgsProcessing, QgsProcessingAlgorithm, QgsProcessingMultiStepFeedback, QgsProcessingParameterVectorLayer, QgsProcessingParameterFile, QgsProcessingParameterRasterLayer, QgsProcessingParameterBoolean, QgsProcessingParameterNumber, QgsProcessingParameterDefinition, QgsProject, QgsPrintLayout, QgsLayoutItemMap, QgsReadWriteContext
+from qgis.core import QgsProcessing, QgsProcessingAlgorithm, QgsProcessingMultiStepFeedback, QgsProcessingParameterVectorLayer, QgsProcessingParameterFile, QgsProcessingParameterRasterLayer, QgsProcessingParameterNumber, QgsProcessingParameterDefinition, QgsProject, QgsPrintLayout, QgsLayoutItemMap, QgsReadWriteContext
 from qgis.PyQt.QtXml import QDomDocument
 from qgis.PyQt.QtCore import QCoreApplication
 import processing
@@ -42,10 +42,6 @@ class DistributeCroqui(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterVectorLayer('pontos_de_controle', 'Pontos de controle', types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         self.addParameter(QgsProcessingParameterRasterLayer('imagem_de_satelite', 'Imagem de Satelite', defaultValue=None))
         self.addParameter(QgsProcessingParameterFile('pasta_do_ponto', 'Selecione a pasta com a(s) estrutura(s) de pontos de controle', behavior=QgsProcessingParameterFile.Folder, fileFilter='Todos os arquivos (*.*)', defaultValue='C:'))
-
-        manter_layout_param = QgsProcessingParameterBoolean('manter_layout', 'Salvar Layout no Compositor de Impressão', defaultValue=False)
-        manter_layout_param.setFlags(manter_layout_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(manter_layout_param)
 
         escala_satelite_param = QgsProcessingParameterNumber('escala_satelite', 'Escala para Satélite', QgsProcessingParameterNumber.Integer, defaultValue=500)
         escala_satelite_param.setFlags(escala_satelite_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -67,8 +63,7 @@ class DistributeCroqui(QgsProcessingAlgorithm):
         project = QgsProject.instance()
         layout_manager = project.layoutManager()
 
-        manter_layout = self.parameterAsBoolean(parameters, 'manter_layout', context)
-        layout = layout_manager.layoutByName('Croqui') if manter_layout else QgsPrintLayout(project)
+        layout = QgsPrintLayout(project)
         if layout is None:
             layout = QgsPrintLayout(project)
         layout_manager.addLayout(layout)
@@ -144,14 +139,13 @@ class DistributeCroqui(QgsProcessingAlgorithm):
 
         shutil.rmtree(pasta_temp)
 
-        if not manter_layout:
-            layout_manager.removeLayout(layout)
-            style_ids = pontos_de_controle_layer.listStylesInDatabase()[1]
-            for style_id in style_ids:
-                pontos_de_controle_layer.deleteStyleFromDatabase(style_id)
-            new_point_style_path = os.path.join(assets_path, 'estilo_ponto_controle_final.qml')
-            pontos_de_controle_layer.loadNamedStyle(new_point_style_path)
-            pontos_de_controle_layer.triggerRepaint()
+        layout_manager.removeLayout(layout)
+        style_ids = pontos_de_controle_layer.listStylesInDatabase()[1]
+        for style_id in style_ids:
+            pontos_de_controle_layer.deleteStyleFromDatabase(style_id)
+        new_point_style_path = os.path.join(assets_path, 'estilo_ponto_controle_final.qml')
+        pontos_de_controle_layer.loadNamedStyle(new_point_style_path)
+        pontos_de_controle_layer.triggerRepaint()
 
         return {'resultado': 'Processamento Concluído'}
 

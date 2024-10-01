@@ -29,7 +29,7 @@ __revision__ = '$Format:%H$'
 
 import os
 import shutil
-from qgis.core import QgsProcessing, QgsProcessingAlgorithm, QgsProcessingMultiStepFeedback, QgsProcessingParameterVectorLayer, QgsProcessingParameterFile, QgsProcessingParameterRasterLayer, QgsProcessingParameterBoolean, QgsProcessingParameterNumber, QgsProcessingParameterDefinition, QgsProject, QgsPrintLayout, QgsLayoutItemMap, QgsReadWriteContext, QgsVectorLayer
+from qgis.core import QgsProcessing, QgsProcessingAlgorithm, QgsProcessingMultiStepFeedback, QgsProcessingParameterVectorLayer, QgsProcessingParameterFile, QgsProcessingParameterRasterLayer, QgsProcessingParameterNumber, QgsProcessingParameterDefinition, QgsProject, QgsPrintLayout, QgsLayoutItemMap, QgsReadWriteContext, QgsVectorLayer
 from qgis.PyQt.QtXml import QDomDocument
 from qgis.PyQt.QtCore import QCoreApplication
 import processing
@@ -43,10 +43,6 @@ class DistributeImages(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterVectorLayer('municipios', 'Municipios', types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterRasterLayer('imagem_de_satelite', 'Imagem de Satelite', defaultValue=None))
         self.addParameter(QgsProcessingParameterFile('pasta_do_ponto', 'Selecione a pasta com a(s) estrutura(s) de pontos de controle', behavior=QgsProcessingParameterFile.Folder, fileFilter='Todos os arquivos (*.*)', defaultValue='C:'))
-
-        manter_layout_param = QgsProcessingParameterBoolean('manter_layout', 'Salvar Layout no Compositor de Impressão', defaultValue=False)
-        manter_layout_param.setFlags(manter_layout_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(manter_layout_param)
 
         escala_satelite_param = QgsProcessingParameterNumber('escala_satelite', 'Escala para Satélite', QgsProcessingParameterNumber.Integer, defaultValue=1000)
         escala_satelite_param.setFlags(escala_satelite_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -68,7 +64,6 @@ class DistributeImages(QgsProcessingAlgorithm):
         assets_path = os.path.join(script_directory, 'assets')
         template_path = os.path.join(assets_path, 'vista_aerea.qpt')
 
-        # Caminho para o arquivo PAIS.gpkg
         pais_path = os.path.join(assets_path, 'PAIS.gpkg')
         pais_layer = QgsVectorLayer(f"{pais_path}|layername=geoft_pais", 'País', 'ogr')
 
@@ -83,8 +78,7 @@ class DistributeImages(QgsProcessingAlgorithm):
         project = QgsProject.instance()
         layout_manager = project.layoutManager()
 
-        manter_layout = self.parameterAsBoolean(parameters, 'manter_layout', context)
-        layout = layout_manager.layoutByName('Vista Aerea') if manter_layout else QgsPrintLayout(project)
+        layout = QgsPrintLayout(project)
         if layout is None:
             layout = QgsPrintLayout(project)
         layout_manager.addLayout(layout)
@@ -180,7 +174,7 @@ class DistributeImages(QgsProcessingAlgorithm):
             'FOLDER': os.path.join(pasta_temp, 'estado'),
             'GEOREFERENCE': False,
             'INCLUDE_METADATA': False,
-            'LAYERS': [parameters['pontos_de_controle'], pais_layer, parameters['estados']],  # Adicionando a camada PAIS
+            'LAYERS': [parameters['pontos_de_controle'], pais_layer, parameters['estados']],
             'LAYOUT': 'Vista Aerea',
             'SORTBY_EXPRESSION': '',
             'SORTBY_REVERSE': False
@@ -203,7 +197,7 @@ class DistributeImages(QgsProcessingAlgorithm):
             'FOLDER': os.path.join(pasta_temp, 'municipio'),
             'GEOREFERENCE': False,
             'INCLUDE_METADATA': False,
-            'LAYERS': [parameters['pontos_de_controle'], pais_layer, parameters['municipios']],  # Adicionando a camada PAIS
+            'LAYERS': [parameters['pontos_de_controle'], pais_layer, parameters['municipios']],
             'LAYOUT': 'Vista Aerea',
             'SORTBY_EXPRESSION': '',
             'SORTBY_REVERSE': False
@@ -226,14 +220,13 @@ class DistributeImages(QgsProcessingAlgorithm):
 
         shutil.rmtree(pasta_temp)
 
-        if not manter_layout:
-            layout_manager.removeLayout(layout)
-            style_ids = pontos_de_controle_layer.listStylesInDatabase()[1]
-            for style_id in style_ids:
-                pontos_de_controle_layer.deleteStyleFromDatabase(style_id)
-            new_point_style_path = os.path.join(assets_path, 'estilo_ponto_controle_final.qml')
-            pontos_de_controle_layer.loadNamedStyle(new_point_style_path)
-            pontos_de_controle_layer.triggerRepaint()
+        layout_manager.removeLayout(layout)
+        style_ids = pontos_de_controle_layer.listStylesInDatabase()[1]
+        for style_id in style_ids:
+            pontos_de_controle_layer.deleteStyleFromDatabase(style_id)
+        new_point_style_path = os.path.join(assets_path, 'estilo_ponto_controle_final.qml')
+        pontos_de_controle_layer.loadNamedStyle(new_point_style_path)
+        pontos_de_controle_layer.triggerRepaint()
 
         return {'resultado': 'Processamento Concluído'}
 
