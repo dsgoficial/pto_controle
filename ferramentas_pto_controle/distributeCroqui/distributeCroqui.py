@@ -29,18 +29,17 @@ __revision__ = '$Format:%H$'
 
 import os
 import shutil
-from qgis.core import QgsProcessing, QgsProcessingAlgorithm, QgsProcessingMultiStepFeedback, QgsProcessingParameterVectorLayer, QgsProcessingParameterFile, QgsProcessingParameterRasterLayer, QgsProcessingParameterBoolean, QgsProcessingParameterNumber, QgsProcessingParameterDefinition, QgsProject, QgsPrintLayout, QgsLayoutItemMap, QgsReadWriteContext, QgsVectorLayer
+from qgis.core import QgsProcessing, QgsProcessingAlgorithm, QgsProcessingMultiStepFeedback, QgsProcessingParameterVectorLayer, QgsProcessingParameterFile, QgsProcessingParameterRasterLayer, QgsProcessingParameterBoolean, QgsProcessingParameterNumber, QgsProcessingParameterDefinition, QgsProject, QgsPrintLayout, QgsLayoutItemMap, QgsReadWriteContext
 from qgis.PyQt.QtXml import QDomDocument
 from qgis.PyQt.QtCore import QCoreApplication
 import processing
-from .handleDistributeImages import HandleDistributeImages
+from qgis.utils import iface
+from .handleDistributeCroqui import HandleDistributeCroqui
 
 
-class DistributeImages(QgsProcessingAlgorithm):
+class DistributeCroqui(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer('pontos_de_controle', 'Pontos de controle', types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
-        self.addParameter(QgsProcessingParameterVectorLayer('estados', 'Estados', types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterVectorLayer('municipios', 'Municipios', types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterRasterLayer('imagem_de_satelite', 'Imagem de Satelite', defaultValue=None))
         self.addParameter(QgsProcessingParameterFile('pasta_do_ponto', 'Selecione a pasta com a(s) estrutura(s) de pontos de controle', behavior=QgsProcessingParameterFile.Folder, fileFilter='Todos os arquivos (*.*)', defaultValue='C:'))
 
@@ -48,33 +47,18 @@ class DistributeImages(QgsProcessingAlgorithm):
         manter_layout_param.setFlags(manter_layout_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(manter_layout_param)
 
-        escala_satelite_param = QgsProcessingParameterNumber('escala_satelite', 'Escala para Satélite', QgsProcessingParameterNumber.Integer, defaultValue=1000)
+        escala_satelite_param = QgsProcessingParameterNumber('escala_satelite', 'Escala para Satélite', QgsProcessingParameterNumber.Integer, defaultValue=500)
         escala_satelite_param.setFlags(escala_satelite_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(escala_satelite_param)
 
-        escala_municipio_param = QgsProcessingParameterNumber('escala_municipio', 'Escala para Município', QgsProcessingParameterNumber.Integer, defaultValue=25000)
-        escala_municipio_param.setFlags(escala_municipio_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(escala_municipio_param)
-
-        escala_estado_param = QgsProcessingParameterNumber('escala_estado', 'Escala para Estado', QgsProcessingParameterNumber.Integer, defaultValue=2000000)
-        escala_estado_param.setFlags(escala_estado_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(escala_estado_param)
-
     def processAlgorithm(self, parameters, context, model_feedback):
-        feedback = QgsProcessingMultiStepFeedback(7, model_feedback)
+
+        feedback = QgsProcessingMultiStepFeedback(3, model_feedback)
         outputs = {}
 
         script_directory = os.path.dirname(__file__)
         assets_path = os.path.join(script_directory, 'assets')
-        template_path = os.path.join(assets_path, 'vista_aerea.qpt')
-
-        # Caminho para o arquivo PAIS.gpkg
-        pais_path = os.path.join(assets_path, 'PAIS.gpkg')
-        pais_layer = QgsVectorLayer(f"{pais_path}|layername=geoft_pais", 'País', 'ogr')
-
-        if not pais_layer.isValid():
-            feedback.reportError('Falha ao carregar a camada PAIS.gpkg.')
-            return {}
+        template_path = os.path.join(assets_path, 'croqui.qpt')
 
         pasta_temp = os.path.join(self.parameterAsFile(parameters, 'pasta_do_ponto', context), 'temp')
         os.makedirs(pasta_temp, exist_ok=True)
@@ -84,7 +68,7 @@ class DistributeImages(QgsProcessingAlgorithm):
         layout_manager = project.layoutManager()
 
         manter_layout = self.parameterAsBoolean(parameters, 'manter_layout', context)
-        layout = layout_manager.layoutByName('Vista Aerea') if manter_layout else QgsPrintLayout(project)
+        layout = layout_manager.layoutByName('Croqui') if manter_layout else QgsPrintLayout(project)
         if layout is None:
             layout = QgsPrintLayout(project)
         layout_manager.addLayout(layout)
@@ -99,13 +83,13 @@ class DistributeImages(QgsProcessingAlgorithm):
             feedback.reportError('Falha ao carregar o layout do template.')
             return {}
 
-        map_item = layout.itemById('Map 1')
+        map_item = layout.itemById('Mapa 1')
         if not map_item or not isinstance(map_item, QgsLayoutItemMap):
             feedback.reportError('Item de mapa não encontrado ou inválido.')
             return {}
-
+        
         pontos_de_controle_layer = self.parameterAsVectorLayer(parameters, 'pontos_de_controle', context)
-
+        
         atlas = layout.atlas()
         atlas.setEnabled(True)
         atlas.setCoverageLayer(pontos_de_controle_layer)
@@ -123,19 +107,11 @@ class DistributeImages(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        state_style_path = os.path.join(assets_path, 'qml_estado.qml')
-        alg_params = {
-            'INPUT': parameters['estados'],
-            'STYLE': state_style_path
-        }
-        outputs['EstiloEstado'] = processing.run('native:setlayerstyle', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-
-        feedback.setCurrentStep(3)
-        if feedback.isCanceled():
-            return {}
-
-        escala_satelite = self.parameterAsDouble(parameters, 'escala_satelite', context)
+        escala_satelite = self.parameterAsInt(parameters, 'escala_satelite', context)
+        extent = map_item.extent()
+        map_item.setExtent(extent)
         map_item.setScale(escala_satelite)
+        layout.refresh()
         alg_params = {
             'ANTIALIAS': True,
             'COVERAGE_LAYER': parameters['pontos_de_controle'],
@@ -147,82 +123,24 @@ class DistributeImages(QgsProcessingAlgorithm):
             'GEOREFERENCE': False,
             'INCLUDE_METADATA': False,
             'LAYERS': [parameters['pontos_de_controle'], parameters['imagem_de_satelite']],
-            'LAYOUT': 'Vista Aerea',
+            'LAYOUT': 'Croqui',
+            'SCALE': escala_satelite,
             'SORTBY_EXPRESSION': '',
             'SORTBY_REVERSE': False
         }
-        outputs['ExportaVistaAereaSatelite'] = processing.run('native:atlaslayouttoimage', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        outputs['ExportaCroquiSatelite'] = processing.run('native:atlaslayouttoimage', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
-        feedback.setCurrentStep(4)
-        if feedback.isCanceled():
-            return {}
-
-        city_style_path = os.path.join(assets_path, 'qml_municipio.qml')
-        alg_params = {
-            'INPUT': parameters['municipios'],
-            'STYLE': city_style_path
-        }
-        outputs['EstiloMunicipio'] = processing.run('native:setlayerstyle', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-
-        feedback.setCurrentStep(5)
-        if feedback.isCanceled():
-            return {}
-
-        escala_estado = self.parameterAsDouble(parameters, 'escala_estado', context)
-        map_item.setScale(escala_estado)
-        alg_params = {
-            'ANTIALIAS': True,
-            'COVERAGE_LAYER': parameters['pontos_de_controle'],
-            'DPI': 300,
-            'EXTENSION': 5,
-            'FILENAME_EXPRESSION': "@atlas_pagename",
-            'FILTER_EXPRESSION': '',
-            'FOLDER': os.path.join(pasta_temp, 'estado'),
-            'GEOREFERENCE': False,
-            'INCLUDE_METADATA': False,
-            'LAYERS': [parameters['pontos_de_controle'], pais_layer, parameters['estados']],  # Adicionando a camada PAIS
-            'LAYOUT': 'Vista Aerea',
-            'SORTBY_EXPRESSION': '',
-            'SORTBY_REVERSE': False
-        }
-        outputs['ExportaVistaAereaEstados'] = processing.run('native:atlaslayouttoimage', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-
-        feedback.setCurrentStep(6)
-        if feedback.isCanceled():
-            return {}
-
-        escala_municipio = self.parameterAsDouble(parameters, 'escala_municipio', context)
-        map_item.setScale(escala_municipio)
-        alg_params = {
-            'ANTIALIAS': True,
-            'COVERAGE_LAYER': parameters['pontos_de_controle'],
-            'DPI': 300,
-            'EXTENSION': 5,
-            'FILENAME_EXPRESSION': "@atlas_pagename",
-            'FILTER_EXPRESSION': '',
-            'FOLDER': os.path.join(pasta_temp, 'municipio'),
-            'GEOREFERENCE': False,
-            'INCLUDE_METADATA': False,
-            'LAYERS': [parameters['pontos_de_controle'], pais_layer, parameters['municipios']],  # Adicionando a camada PAIS
-            'LAYOUT': 'Vista Aerea',
-            'SORTBY_EXPRESSION': '',
-            'SORTBY_REVERSE': False
-        }
-        outputs['ExportaVistaAereaMunicipios'] = processing.run('native:atlaslayouttoimage', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-
-        feedback.setCurrentStep(7)
+        feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
 
         feedback.pushInfo('Distribuindo imagens nas estruturas de pasta...')
         folder_in = self.parameterAsFile(parameters, 'pasta_do_ponto', context)
         folder_aerview = os.path.join(pasta_temp, 'satelite')
-        folder_view1 = os.path.join(pasta_temp, 'municipio')
-        folder_view2 = os.path.join(pasta_temp, 'estado')
 
-        handle = HandleDistributeImages(folder_in, folder_aerview, folder_view1, folder_view2)
+        handle = HandleDistributeCroqui(folder_in, folder_aerview)
         handle.create_folder()
-        handle.distribute_images()
+        handle.distribute_croqui()
 
         shutil.rmtree(pasta_temp)
 
@@ -237,22 +155,21 @@ class DistributeImages(QgsProcessingAlgorithm):
 
         return {'resultado': 'Processamento Concluído'}
 
-
     def name(self):
-        return '08 - Distribuir vistas aéreas na estrutura de pasta'
+        return 'Distribuir croqui na estrutura de pasta'
 
     def displayName(self):
         return self.tr(self.name())
 
     def group(self):
-        return self.tr("Pós-processamento")
+        return self.tr("Geração de Croqui")
 
     def groupId(self):
-        return "posprocessamento"
+        return "geracaodecroqui"
 
     def shortHelpString(self):
         return self.tr('''
-        Esta ferramenta gera e distribui as imagens aéreas dos pontos em estrutura de pastas.
+        Esta ferramenta gera e distribui croquis dos pontos em estrutura de pastas.
         ''')
 
     def tr(self, string):
@@ -260,4 +177,4 @@ class DistributeImages(QgsProcessingAlgorithm):
 
     def createInstance(self):
         
-        return DistributeImages()
+        return DistributeCroqui()
