@@ -378,10 +378,11 @@ class EvaluateStructure():
     def evaluate_formato_nativo(self, pasta, pto):
         erros = []
         erros += self.no_folders(pasta)
-        files = [f.replace(".DAT", ".dat").replace(".T01", ".t01").replace(".TPS", ".tps")
+        files = [f.replace(".DAT", ".dat").replace(".T01", ".t01").replace(".TPS", ".tps").replace(".T02", ".t02")
                  for f in listdir(pasta) if isfile(join(pasta, f))]
+        
         arquivos_incorretos = set(files).difference(
-            ["{0}.dat".format(pto), "{0}.t01".format(pto), "{0}.tps".format(pto), "desktop.ini"])
+            ["{0}.dat".format(pto), "{0}.t01".format(pto), "{0}.tps".format(pto), "{0}.t02".format(pto), "desktop.ini"])
         if len(arquivos_incorretos) > 0:
             for a in arquivos_incorretos:
                 erros.append(
@@ -391,13 +392,14 @@ class EvaluateStructure():
             if len(arquivos_faltando) > 0:
                 for a in arquivos_faltando:
                     erros.append(
-                        u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
+                    u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
         if self.estacao == 1:
-            arquivos_faltando = set(["{0}.t01".format(pto)]).difference(files)
+            arquivos_faltando = set(["{0}.t01".format(pto), "{0}.t02".format(pto)]).difference(files)
             if len(arquivos_faltando) > 0:
                 for a in arquivos_faltando:
                     erros.append(
-                        u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
+                    u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
+
         return erros
 
     def evaluate_rinex(self, pasta, pto, data):
