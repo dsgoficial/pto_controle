@@ -25,6 +25,8 @@ import json
 from pathlib import Path
 import psycopg2
 import pyproj
+import shutil
+from PIL import Image
 
 
 class HandleRefreshDB():
@@ -116,6 +118,56 @@ class HandleRefreshDB():
         for item in to_update:
             row.update({item : self.defaults[item]})
         return row
+    
+    def create(self):
+        msg = ""
+        pto_regex = r"^([A-Z]{2})-(HV|Base|BASE)-[1-9]+[0-9]*$"
+        sufixImagesRegex = r".*\.(png|jpg|jpeg)$"
+        if any(not re.match(sufixImagesRegex, nameImage.suffix) for nameImage in self.pasta.rglob('3_Foto_Rastreio/*')):
+            msg += "Verifique se todos os arquivos dentro da pasta de fotografias são imagens (.png, .jpg ou .jpeg)."
+            return msg
+        folderToRename = {}
+        for root, dirs, files in os.walk(self.pasta):
+            if re.match(pto_regex, Path(root).parts[-1]):
+                if not "3_Foto_Rastreio_Processada" in dirs:
+                    os.mkdir(os.path.join(root, "3_Foto_Rastreio_Processada"))
+                    folderToRename[os.path.join(root, "3_Foto_Rastreio_Processada")] = os.path.join(root, "3_Foto_Rastreio")
+                else:
+                    msg += "Já há uma pasta de fotos processadas."
+                    return msg
+        msg += self.salvarImagem()
+
+        for newFolder, oldFolder in folderToRename.items():
+            shutil.rmtree(oldFolder)
+            os.rename(newFolder, oldFolder)
+
+        return msg
+    
+    def salvarImagem(self):
+        for nameImage in self.pasta.rglob('3_Foto_Rastreio/*'):
+            try:
+                openImage = Image.open(str(nameImage))
+            except ModuleNotFoundError:
+                msg = "Verifique se a biblioteca Pillow está instalada, confira as instruções de instalação na documentação."
+                return msg
+            if isinstance(openImage, str):
+                msg = openImage
+                return msg
+            width, heigth = openImage.size
+            if width > heigth:
+                size = 1200, 900
+            else:
+                size = 900, 1200
+            folderProcess = os.path.join(nameImage.parent.parent, '3_Foto_Rastreio_Processada')
+            os.makedirs(os.path.dirname(os.path.join(folderProcess, nameImage.name)), exist_ok=True)
+            openImage.thumbnail(size, Image.Resampling.LANCZOS)
+            openImage.save(os.path.join(folderProcess, nameImage.name), 
+                           format='JPEG', 
+                           quality=70, 
+                           subsampling=2
+                        )
+        msg = "As imagens processadas foram salvas na pasta 3_Foto_Rastreio"
+        return msg
 
 
 def createTimeStamp(points):

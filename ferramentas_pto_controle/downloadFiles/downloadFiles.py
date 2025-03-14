@@ -118,7 +118,7 @@ class DownloadFiles(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.FOTOGRAFIAS,
-                self.tr('Realizar o downloado das fotografias laterais'),
+                self.tr('Realizar o download das fotografias laterais'),
                 defaultValue=True
             )
         )

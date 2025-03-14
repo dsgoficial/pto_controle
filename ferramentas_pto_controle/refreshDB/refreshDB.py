@@ -30,6 +30,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterString,
+                       QgsProcessingFeedback,
                        QgsProcessingParameterNumber)
 from qgis.PyQt.QtCore import QCoreApplication
 from .handleRefreshDB import HandleRefreshDB
@@ -133,6 +134,8 @@ class RefreshDB(QgsProcessingAlgorithm):
         points = refresh.getPointsFromCSV()
         points2 = refresh.getCoordsFromRinex(points)
         refresh.upsert(points2)
+        msg = refresh.create()
+        feedback.pushInfo(f"{msg}")
 
         return {self.OUTPUT: 'Processamento Concluído'}
 
