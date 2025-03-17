@@ -26,7 +26,6 @@ from pathlib import Path
 import psycopg2
 import pyproj
 import shutil
-from PIL import Image
 
 
 class HandleRefreshDB():
@@ -146,6 +145,7 @@ class HandleRefreshDB():
     def salvarImagem(self):
         for nameImage in self.pasta.rglob('3_Foto_Rastreio/*'):
             try:
+                from PIL import Image
                 openImage = Image.open(str(nameImage))
             except ModuleNotFoundError:
                 msg = "Verifique se a biblioteca Pillow está instalada, confira as instruções de instalação na documentação."
