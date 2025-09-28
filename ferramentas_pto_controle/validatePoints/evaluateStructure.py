@@ -394,11 +394,17 @@ class EvaluateStructure():
                     erros.append(
                     u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
         if self.estacao == 1:
-            arquivos_faltando = set(["{0}.t01".format(pto), "{0}.t02".format(pto)]).difference(files)
-            if len(arquivos_faltando) > 0:
-                for a in arquivos_faltando:
-                    erros.append(
-                    u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
+            t01 = f"{pto}.t01"
+            t02 = f"{pto}.t02"
+            presentes = [f for f in [t01, t02] if f in files]
+            if len(presentes) == 0:
+                erros.append(
+                    u"A pasta {0} deve conter o arquivo {1} ou {2}.".format(pasta, t01, t02)
+                )
+            elif len(presentes) == 2:
+                erros.append(
+                    u"A pasta {0} não deve conter ambos os arquivos {1} e {2}, apenas um deles.".format(pasta, t01, t02)
+                )
 
         return erros
 

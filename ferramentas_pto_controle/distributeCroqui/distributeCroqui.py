@@ -150,16 +150,16 @@ class DistributeCroqui(QgsProcessingAlgorithm):
         return {'resultado': 'Processamento Concluído'}
 
     def name(self):
-        return 'Distribuir croqui na estrutura de pasta'
+        return '15 - Distribuir croqui na estrutura de pasta'
 
     def displayName(self):
         return self.tr(self.name())
 
     def group(self):
-        return self.tr("Geração de Croqui")
+        return self.tr("Gerenciar Pontos")
 
     def groupId(self):
-        return "geracaodecroqui"
+        return "gerenciamento"
 
     def shortHelpString(self):
         return self.tr('''

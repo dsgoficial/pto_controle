@@ -4,9 +4,9 @@
 
 [general]
 name=Ponto Controle
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.34
 description=Ferramentas para a gerência de pontos de controle
-version=0.1
+version=0.2
 author=1CGEO/DSG
 email=eliton.filho@eb.mil.br
 
