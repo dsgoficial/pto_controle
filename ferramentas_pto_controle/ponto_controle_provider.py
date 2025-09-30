@@ -47,7 +47,7 @@ from .pathFilesInAttribute.pathFilesInAttribute import PathFilesInAttribute
 from .downloadFiles.downloadFiles import DownloadFiles
 from .fixDateTrimble.fixDateTrimble import FixDateTrimble
 from .checkNumber.checkNumber import CheckNumber
-
+from .zipFoldersCheckpoints.zipFoldersCheckpoints import ZipFoldersCheckpoints
 
 class PontoControleProvider(QgsProcessingProvider):
     '''
@@ -83,6 +83,7 @@ class PontoControleProvider(QgsProcessingProvider):
         self.addAlgorithm(DownloadFiles())
         self.addAlgorithm(FixDateTrimble())
         self.addAlgorithm(CheckNumber())
+        self.addAlgorithm(ZipFoldersCheckpoints())
 
     def id(self):
         """
