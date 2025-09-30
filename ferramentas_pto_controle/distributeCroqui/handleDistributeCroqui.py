@@ -22,7 +22,7 @@ class HandleDistributeCroqui():
             point = folder.parts[-1]
             try:
                 shutil.copy(str(Path(self.aer_view / f'{point}.jpg')), str(
-                    folder / '4_Croqui' / f'{point}_CROQUI.jpg'))
+                    folder / '4_Croqui' / f'{point}_CROQUI_DIGITAL.jpg'))
             except IOError as err:
                 print(err)
 

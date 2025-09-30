@@ -14,13 +14,14 @@ from processImages import processImages
 
 class GenerateMonograpy():
 
-    def __init__(self,path, host, port, db_name, user, password):
+    def __init__(self,path, host, port, db_name, user, password, digital=False):
         self.conn = psycopg2.connect("host='{0}' port='{1}' dbname='{2}' user='{3}' password='{4}'".format(host, port, db_name, user, password))
         self.path = Path(path)
         self.img_extensions = ['.png', '.PNG', '.jpg', '.JPG', '.jpeg', '.JPEG']
         with open('config_default_monografia.json') as setting: 
             self.settings = json.load(setting)
         self.points = []
+        self.digital = digital
         # processImages(self.path)
 
     def updateDB(self):
@@ -121,13 +122,17 @@ class GenerateMonograpy():
             pto['photoPt{}'.format(_idx + 1)] = photosPt[_idx]
 
         # Não esquecer que as visões aéreas tem que ser geradas!
-        pto['photoCroqui'] = [str(f) for f in Path(folder / '4_Croqui').iterdir() if f.suffix in self.img_extensions][0]
+        croqui_folder = Path(folder / '4_Croqui')
+        croqui_files = [f for f in croqui_folder.iterdir() if f.suffix in self.img_extensions]
+        croqui_digital = [str(f) for f in croqui_files if f.stem.endswith('_CROQUI_DIGITAL')]
+        croqui_normal = [str(f) for f in croqui_files if f.stem.endswith('_CROQUI')]
+        if self.digital and croqui_digital:
+            pto['photoCroqui'] = croqui_digital[0]
+        elif croqui_normal:
+            pto['photoCroqui'] = croqui_normal[0]
         pto['photoAerView'] = str(Path(folder / '7_Imagens_Monografia' / '{}_AEREA.jpg'.format(pto["cod_ponto"])))
         pto['photoView2'] = str(Path(folder / '7_Imagens_Monografia' / '{}_MUNICIPIO.jpg'.format(pto["cod_ponto"])))
         pto['photoView1'] = str(Path(folder / '7_Imagens_Monografia' / '{}_ESTADO.jpg'.format(pto["cod_ponto"])))
-        # pto['photoAerView'] = [str(f) for f in Path(self.settings['photoAerView']).iterdir() if f.match('{}*.jpg'.format(pto['cod_ponto']))][0]
-        # pto['photoView1'] = [str(f) for f in Path(self.settings['photoView1']).iterdir() if f.match('{}*.jpg'.format(pto['cod_ponto']))][0]
-        # pto['photoView2'] = [str(f) for f in Path(self.settings['photoView2']).iterdir() if f.match('{}*.jpg'.format(pto['cod_ponto']))][0]
 
         engine = Renderer()
 

@@ -1,32 +1,4 @@
 # -*- coding: utf-8 -*-
-
-"""
-/***************************************************************************
- PontoControle
-                                 A QGIS plugin
- Ferramentas para a gerência de pontos de controle
-                              -------------------
-        begin                : 2020-01-07
-        copyright            : (C) 2020 by 1CGEO/DSG
-        email                : eliton.filho@eb.mil.br
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-"""
-
-__author__ = '1CGEO/DSG'
-__date__ = '2024-09-09'
-__copyright__ = '(C) 2024 by 1CGEO/DSG'
-
-__revision__ = '$Format:%H$'
-
 import os
 import shutil
 from qgis.core import QgsProcessing, QgsProcessingAlgorithm, QgsProcessingMultiStepFeedback, QgsProcessingParameterVectorLayer, QgsProcessingParameterFile, QgsProcessingParameterRasterLayer, QgsProcessingParameterNumber, QgsProcessingParameterDefinition, QgsProject, QgsPrintLayout, QgsLayoutItemMap, QgsReadWriteContext
@@ -39,9 +11,9 @@ from .handleDistributeCroqui import HandleDistributeCroqui
 
 class DistributeCroqui(QgsProcessingAlgorithm):
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterVectorLayer('pontos_de_controle', 'Pontos de controle', types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
-        self.addParameter(QgsProcessingParameterRasterLayer('imagem_de_satelite', 'Imagem de Satelite', defaultValue=None))
-        self.addParameter(QgsProcessingParameterFile('pasta_do_ponto', 'Selecione a pasta com a(s) estrutura(s) de pontos de controle', behavior=QgsProcessingParameterFile.Folder, fileFilter='Todos os arquivos (*.*)', defaultValue='C:'))
+        self.addParameter(QgsProcessingParameterVectorLayer('pontos_de_controle', 'Pontos do Croqui Digital', types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
+        self.addParameter(QgsProcessingParameterRasterLayer('imagem_de_satelite', 'Imagem de Satélite', defaultValue=None))
+        self.addParameter(QgsProcessingParameterFile('pasta_do_ponto', 'Selecione a pasta com a estrutura de pontos de controle', behavior=QgsProcessingParameterFile.Folder))
 
         escala_satelite_param = QgsProcessingParameterNumber('escala_satelite', 'Escala para Satélite', QgsProcessingParameterNumber.Integer, defaultValue=500)
         escala_satelite_param.setFlags(escala_satelite_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
@@ -150,7 +122,7 @@ class DistributeCroqui(QgsProcessingAlgorithm):
         return {'resultado': 'Processamento Concluído'}
 
     def name(self):
-        return '15 - Distribuir croqui na estrutura de pasta'
+        return '15 - Distribuir croqui digital na estrutura de pasta'
 
     def displayName(self):
         return self.tr(self.name())

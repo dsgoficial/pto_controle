@@ -484,18 +484,17 @@ class EvaluateStructure():
         erros += self.no_folders(pasta)
         files = [f.replace(".JPG", ".xxx").replace(".jpg", ".xxx").replace(".JPEG", ".xxx").replace(".jpeg", ".xxx").replace(".PNG", ".xxx").replace(".png", ".xxx")
                  for f in listdir(pasta) if isfile(join(pasta, f))]
-        arquivos_incorretos = set(files).difference(
-            ["Thumbs.db", "desktop.ini", "{0}_CROQUI.xxx".format(pto)])
-        arquivos_faltando = set(
-            ["{0}_CROQUI.xxx".format(pto)]).difference(files)
+        croqui = "{0}_CROQUI.xxx".format(pto)
+        croqui_digital = "{0}_CROQUI_DIGITAL.xxx".format(pto)
+        arquivos_esperados = ["Thumbs.db", "desktop.ini", croqui, croqui_digital]
+        arquivos_incorretos = set(files).difference(arquivos_esperados)
         if len(arquivos_incorretos) > 0:
             for a in arquivos_incorretos:
                 erros.append(
                     u"A pasta {0} não deve conter o arquivo {1}.".format(pasta, a))
-        if len(arquivos_faltando) > 0:
-            for a in arquivos_faltando:
-                erros.append(
-                    u"A pasta {0} deve conter o arquivo {1}.".format(pasta, a))
+        if croqui not in files and croqui_digital not in files:
+            erros.append(
+                u"A pasta {0} deve conter pelo menos um dos arquivos {1} ou {2}.".format(pasta, croqui, croqui_digital))
         return erros
 
     def compare_csv_rinex(self, pasta):
