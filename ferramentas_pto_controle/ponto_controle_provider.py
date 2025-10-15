@@ -41,6 +41,7 @@ from .beforePPP.beforePPP import BeforePPP
 from .afterPPP.afterPPP import AfterPPP
 from .distributeImages.distributeImages import DistributeImages
 from .distributeCroqui.distributeCroqui import DistributeCroqui
+from .distributeMonograpy.distributeMonograpy import DistributeMonografia
 from .loadToBPC.loadToBPC import LoadToBPC
 from .refreshFromPPPRTE.refreshFromPPPRTE import RefreshFromPPPRTE
 from .pathFilesInAttribute.pathFilesInAttribute import PathFilesInAttribute
@@ -77,6 +78,7 @@ class PontoControleProvider(QgsProcessingProvider):
         self.addAlgorithm(AfterPPP())
         self.addAlgorithm(DistributeImages())
         self.addAlgorithm(DistributeCroqui())
+        self.addAlgorithm(DistributeMonografia())
         self.addAlgorithm(LoadToBPC())
         self.addAlgorithm(RefreshFromPPPRTE())
         self.addAlgorithm(PathFilesInAttribute())
