@@ -21,8 +21,6 @@ try:
 except ImportError:
     MISSING_DEPS.append('psycopg2-binary')
 
-HandleDistributeMonografia = None
-
 
 class DistributeMonografia(QgsProcessingAlgorithm):
     """Gera PDFs simples dos pontos de controle, sem ODT."""
@@ -37,13 +35,14 @@ class DistributeMonografia(QgsProcessingAlgorithm):
     USAR_CROQUI = 'USAR_CROQUI_DIGITAL'
     LOGO = 'LOGOTIPO'
     ASSINATURA = 'ASSINATURA'
+    TEMPLATE_QPT = 'TEMPLATE_QPT' # Adicionado parâmetro para o QPT
 
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterString(self.HOST, self.tr('Host do PostgreSQL'), defaultValue='localhost'))
         self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), defaultValue=5432, type=QgsProcessingParameterNumber.Integer))
         self.addParameter(QgsProcessingParameterString(self.DATABASE, self.tr('Banco de Dados'), defaultValue='treinamento'))
         self.addParameter(QgsProcessingParameterString(self.USUARIO, self.tr('Usuário'), defaultValue='postgres'))
-        self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='senha123'))
+        self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='senha123')) 
 
         self.addParameter(QgsProcessingParameterFile(
             self.PASTA_ESTRUTURA, self.tr('Pasta com Estrutura dos Pontos'),
@@ -52,24 +51,33 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         ))
 
         self.addParameter(QgsProcessingParameterFile(
-            self.LOGO, self.tr('Logotipo'),
-            behavior=QgsProcessingParameterFile.File,
-            defaultValue='C:\\Users\\kretzer\\Desktop\\tutorial_pto_controle\\logoCGEO1.png'
+             self.TEMPLATE_QPT, self.tr('Arquivo de Template QPT'),
+             behavior=QgsProcessingParameterFile.File,
+             fileFilter='Layout template (*.qpt)',
+             defaultValue=os.path.join(os.path.dirname(__file__), 'assets', 'modelo_teste0.qpt')
         ))
+        
+        # Remoção dos parâmetros LOGO, ASSINATURA, TIPO_MODELO e USAR_CROQUI se não forem usados na lógica QGIS/Atlas
 
-        self.addParameter(QgsProcessingParameterFile(
-            self.ASSINATURA, self.tr('Assinatura'),
-            behavior=QgsProcessingParameterFile.File,
-            defaultValue='C:\\Users\\kretzer\\Desktop\\tutorial_pto_controle\\assinatura.png'
-        ))
+        # self.addParameter(QgsProcessingParameterFile(
+        #      self.LOGO, self.tr('Logotipo'),
+        #      behavior=QgsProcessingParameterFile.File,
+        #      defaultValue='C:\Users\kretzer\Desktop\tutorial_pto_controle'
+        # ))
+
+        # self.addParameter(QgsProcessingParameterFile(
+        #      self.ASSINATURA, self.tr('Assinatura'),
+        #      behavior=QgsProcessingParameterFile.File,
+        #      defaultValue=''
+        # ))
 
         self.addParameter(QgsProcessingParameterEnum(
-            self.TIPO_MODELO, self.tr('Orientação da Página'),
-            options=['Paisagem', 'Retrato'], defaultValue=1
+             self.TIPO_MODELO, self.tr('Orientação da Página'),
+             options=['Paisagem', 'Retrato'], defaultValue=1
         ))
 
         self.addParameter(QgsProcessingParameterBoolean(
-            self.USAR_CROQUI, self.tr('Usar Croqui Digital (se disponível)'), defaultValue=True
+             self.USAR_CROQUI, self.tr('Usar Croqui Digital (se disponível)'), defaultValue=True
         ))
 
     def processAlgorithm(self, parameters, context, model_feedback):
@@ -80,7 +88,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             return {}
 
         import psycopg2
-        from .handleDistributeMonograpy import HandleDistributeMonografia
+        from .handleDistributeMonograpy import HandleDistributeMonografia 
 
         host = self.parameterAsString(parameters, self.HOST, context)
         porta = self.parameterAsInt(parameters, self.PORTA, context)
@@ -92,6 +100,8 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         assinatura = self.parameterAsFile(parameters, self.ASSINATURA, context)
         tipo_modelo = self.parameterAsEnum(parameters, self.TIPO_MODELO, context)
         usar_croqui_digital = self.parameterAsBool(parameters, self.USAR_CROQUI, context)
+        template_qpt = self.parameterAsFile(parameters, self.TEMPLATE_QPT, context)
+
 
         conn = self.getConnection(host, porta, database, usuario, senha, feedback)
         if not conn:
@@ -101,22 +111,36 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         handler = HandleDistributeMonografia(
             path=pasta_estrutura,
             conn=conn,
+            template_qpt=template_qpt, # Usa o template do parâmetro
             settings={'LOGOTIPO': logotipo, 'signature': assinatura},
             digital=usar_croqui_digital,
-            feedback=feedback
+            feedback=feedback,
+            tipo_modelo=tipo_modelo
         )
 
         folders = handler.getFoldersFromStructure()
         total = len(folders)
         sucesso = 0
+        feedback.setCurrentStep(1)
+        
+        if total == 0:
+            feedback.pushInfo("Nenhuma pasta de ponto encontrada na estrutura.")
+            conn.close()
+            return {}
 
         for i, folder in enumerate(folders):
+            if feedback.isCanceled():
+                 break
+                 
+            cod_ponto = folder.parts[-1]
             feedback.setProgress((i / total) * 100)
+            feedback.pushInfo(f"Processando ponto: {cod_ponto}")
+            
             try:
-                handler.executeProcess(folder, tipo_modelo)
-                sucesso += 1
+                if handler.executeProcess(folder, tipo_modelo):
+                    sucesso += 1
             except Exception as e:
-                feedback.reportError(f"Erro em {folder.name}: {str(e)}")
+                feedback.reportError(f"Erro em {cod_ponto}: {str(e)}")
 
         conn.close()
         feedback.pushInfo(f"{sucesso}/{total} PDFs gerados com sucesso.")
