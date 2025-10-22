@@ -200,12 +200,9 @@ class HandleDistributeMonografia:
             if path_img and Path(path_img).is_file():
                 uri = Path(path_img).resolve().as_uri()
                 QgsExpressionContextUtils.setLayoutVariable(layout, key, uri)
-                self.log(f"✓ Variável {key} injetada: {uri}")
             else:
                 QgsExpressionContextUtils.setLayoutVariable(layout, key, "")
-                self.log(f"⚠ Variável {key} não definida ou arquivo ausente.")
-
-        self.log("✓ Variáveis injetadas no layout com sucesso.")
+                self.log(f" Variável {key} não definida ou arquivo ausente.")
 
         extra_imgs = {
             'logoInstituicao': self.settings.get('LOGOTIPO'),
@@ -216,7 +213,6 @@ class HandleDistributeMonografia:
             if path_img and Path(path_img).is_file():
                 uri = Path(path_img).resolve().as_uri()
                 QgsExpressionContextUtils.setLayoutVariable(layout, key, uri)
-                self.log(f" Variável extra {key} injetada: {uri}")
             else:
                 QgsExpressionContextUtils.setLayoutVariable(layout, key, "")
                 self.log(f" Variável extra {key} não definida ou arquivo ausente.")
@@ -258,7 +254,6 @@ class HandleDistributeMonografia:
 
                 item.setPicturePath(local_path)
                 item.refresh()
-                self.log(f" Imagem aplicada: {item_id} ← {local_path}")
 
             except Exception as e:
                 self.log(f" Erro ao aplicar imagem em {item_id}: {e}")

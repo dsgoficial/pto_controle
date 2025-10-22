@@ -40,8 +40,9 @@ class DistributeMonografia(QgsProcessingAlgorithm):
     TEMPLATE_QPT = 'TEMPLATE_QPT' # Adicionado parâmetro para o QPT
 
     def initAlgorithm(self, config=None):
+        self.plugin_dir = os.path.dirname(os.path.abspath(__file__))
         self.addParameter(QgsProcessingParameterString(self.HOST, self.tr('Host do PostgreSQL'), defaultValue=''))
-        self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), type=QgsProcessingParameterNumber.Integer))
+        self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), defaultValue=0, type=QgsProcessingParameterNumber.Integer))
         self.addParameter(QgsProcessingParameterString(self.DATABASE, self.tr('Banco de Dados'), defaultValue=''))
         self.addParameter(QgsProcessingParameterString(self.USUARIO, self.tr('Usuário'), defaultValue=''))
         self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='')) # isSecret=True para a senha
@@ -51,17 +52,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             behavior=QgsProcessingParameterFile.Folder,
             defaultValue=''
         ))
-
-        # Adicionado parâmetro para o Template QPT
-        self.addParameter(QgsProcessingParameterFile(
-             self.TEMPLATE_QPT, self.tr('Arquivo de Template QPT'),
-             behavior=QgsProcessingParameterFile.File,
-             fileFilter='Layout template (*.qpt)',
-             defaultValue=''
-        ))
-        
-        # Remoção dos parâmetros LOGO, ASSINATURA, TIPO_MODELO e USAR_CROQUI se não forem usados na lógica QGIS/Atlas
-        # Se você ainda precisar delas, mantenha, mas a lógica de uso deve ser movida para o Handle.
 
         self.addParameter(QgsProcessingParameterFile(
              self.LOGO, self.tr('Logotipo'),
@@ -83,7 +73,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterBoolean(
              self.USAR_CROQUI, self.tr('Usar Croqui Digital (se disponível)'), defaultValue=True
         ))
-        # Fim dos parâmetros não essenciais, mas mantidos
 
     def processAlgorithm(self, parameters, context, model_feedback):
         feedback = QgsProcessingMultiStepFeedback(3, model_feedback)
@@ -93,7 +82,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             return {}
 
         import psycopg2
-        # Importa o Handle atualizado do mesmo pacote
         from .handleDistributeMonograpy import HandleDistributeMonografia 
 
         host = self.parameterAsString(parameters, self.HOST, context)
@@ -106,16 +94,21 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         assinatura = self.parameterAsFile(parameters, self.ASSINATURA, context)
         tipo_modelo = self.parameterAsEnum(parameters, self.TIPO_MODELO, context)
         usar_croqui_digital = self.parameterAsBool(parameters, self.USAR_CROQUI, context)
-        template_qpt = self.parameterAsFile(parameters, self.TEMPLATE_QPT, context)
+        modelo_index = self.parameterAsEnum(parameters, self.TIPO_MODELO, context)
 
+        retrato_qpt = os.path.join(self.plugin_dir, 'assets', 'modelo_teste0.qpt')
+        paisagem_qpt = os.path.join(self.plugin_dir, 'assets', 'modelo_teste_paisagem.qpt')
+        if modelo_index == 1:
+            template_qpt = retrato_qpt
+            feedback.pushInfo(' Usando modelo: Retrato')
+        else:
+            template_qpt = paisagem_qpt
+            feedback.pushInfo(' Usando modelo: Paisagem')
 
         conn = self.getConnection(host, porta, database, usuario, senha, feedback)
         if not conn:
             feedback.reportError('Falha ao conectar ao banco.')
             return {}
-        
-        # O caminho do template QPT é obtido diretamente do parâmetro
-        # template_path = os.path.join(os.path.dirname(__file__), 'assets', 'modelo_teste0.qpt')
 
         handler = HandleDistributeMonografia(
             path=pasta_estrutura,
