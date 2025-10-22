@@ -182,21 +182,14 @@ class HandleDistributeMonografia:
 
 
     def _injectProjectVariables_Final(self, layout, data: dict, cod_ponto: str):
-        """
-        Injeta variáveis diretamente no layout (escopo de layout),
-        compatível com todas as versões do QGIS.
-        """
-
-        # Injeta variáveis de dados
+        """Injeta variáveis diretamente no layout (escopo de layout)"""
         for k, v in data.items():
             valor = str(v) if v is not None else ""
             QgsExpressionContextUtils.setLayoutVariable(layout, k, valor)
 
-        # Injeta variáveis adicionais
         QgsExpressionContextUtils.setLayoutVariable(layout, 'cod_ponto', cod_ponto)
         QgsExpressionContextUtils.setLayoutVariable(layout, 'pasta_estrutura', str(self.path))
 
-        # Injeta variáveis de imagem (validando caminhos)
         photo_keys = [
             'photoCroqui', 'photoAerView', 'photoView1', 'photoView2',
             'photoPt1', 'photoPt2', 'photoPt3', 'photoPt4'
@@ -204,81 +197,68 @@ class HandleDistributeMonografia:
 
         for key in photo_keys:
             path_img = data.get(key)
-            if path_img and path_img.strip():
-                path_obj = Path(path_img)
-                
-                if path_obj.is_file():
-                    caminho_final = path_obj.resolve().as_uri()
-                    
-                    QgsExpressionContextUtils.setLayoutVariable(layout, key, caminho_final) # <--- USAR ESTA LINHA
-                    
-                    self.log(f"✓ {key}: {caminho_final}")
-
-                    # DEBUG
-                    scope = QgsExpressionContextUtils.layoutScope(layout)
-                    valor_injetado = scope.variable(key)
-                    if valor_injetado != caminho_final:
-                        self.log(f"ERRO FATAL: Variável {key} ainda está inconsistente!")
-                    else:
-                        self.log(f"DEBUG: Variável {key} lida corretamente no escopo do layout.")
-                        
-                else:
-                    self.log(f"⚠ Imagem não encontrada para {key}: {path_img}")
-                    QgsExpressionContextUtils.setLayoutVariable(layout, key, "")
+            if path_img and Path(path_img).is_file():
+                uri = Path(path_img).resolve().as_uri()
+                QgsExpressionContextUtils.setLayoutVariable(layout, key, uri)
+                self.log(f"✓ Variável {key} injetada: {uri}")
             else:
                 QgsExpressionContextUtils.setLayoutVariable(layout, key, "")
+                self.log(f"⚠ Variável {key} não definida ou arquivo ausente.")
 
         self.log("✓ Variáveis injetadas no layout com sucesso.")
 
+        extra_imgs = {
+            'logoInstituicao': self.settings.get('LOGOTIPO'),
+            'assinaturaResponsavel': self.settings.get('signature')
+        }
+
+        for key, path_img in extra_imgs.items():
+            if path_img and Path(path_img).is_file():
+                uri = Path(path_img).resolve().as_uri()
+                QgsExpressionContextUtils.setLayoutVariable(layout, key, uri)
+                self.log(f" Variável extra {key} injetada: {uri}")
+            else:
+                QgsExpressionContextUtils.setLayoutVariable(layout, key, "")
+                self.log(f" Variável extra {key} não definida ou arquivo ausente.")
+
+
     def setImagesDirectly(self, layout: QgsPrintLayout):
-        """
-        Define o caminho das imagens nos itens QgsLayoutItemPicture do layout
-        usando setPicturePath(), contornando problemas de expressão.
-        """
-        
-        # Mapeamento: {'Nome da Variável': 'ID/Nome do Item no QPT'}
-        # VOCÊ PRECISA GARANTIR QUE OS VALORES (IDs dos Itens) ESTÃO CORRETOS NO SEU TEMPLATE QPT!
+        """Define o caminho das imagens diretamente nos itens do layout"""
         image_map = {
-            'photoCroqui': 'Croqui',     
-            'photoAerView': 'AereaView',     
-            'photoView1': 'Municipio',      
-            'photoView2': 'Estado',   
+            'photoCroqui': 'Croqui',
+            'photoAerView': 'AereaView',
+            'photoView1': 'Municipio',
+            'photoView2': 'Estado',
             'photoPt1': 'Foto1',
             'photoPt2': 'Foto2',
             'photoPt3': 'Foto3',
             'photoPt4': 'Foto4',
+            'logoInstituicao': 'logo',          
+            'assinaturaResponsavel': 'assinatura',
         }
 
         for var_name, item_id in image_map.items():
-            # 1. Obtém o caminho da imagem da variável de layout
-            scope = QgsExpressionContextUtils.layoutScope(layout)
-            path_uri = scope.variable(var_name)
-            
-            # 2. Encontra o item de layout
+            context = layout.createExpressionContext()
+            path_uri = context.variable(var_name)
             item = layout.itemById(item_id)
-            
-            # 3. Verifica se o item existe e se o caminho é válido
-            if item is None:
-                self.log(f"Item de Layout não encontrado: {item_id}")
-                continue
-            
-            if not path_uri or not path_uri.startswith('file:///'):
-                 self.log(f"Caminho URI inválido para {item_id} ({var_name}): {path_uri}")
-                 # Opcional: define um caminho para um placeholder ou seta para vazio
-                 # item.setPicturePath("") 
-                 continue
 
-            # 4. Define o caminho da imagem (o PyQGIS resolve o URI)
+            if not item:
+                self.log(f" Item não encontrado: {item_id}")
+                continue
+
+            if not path_uri:
+                self.log(f" Nenhum caminho definido para {item_id} ({var_name})")
+                continue
+
             try:
-                # O item deve ser um QgsLayoutItemPicture para setPicturePath funcionar
-                # O item.setPicturePath espera um caminho local, mas o URI file:/// funciona
-                item.setPicturePath(path_uri) 
-                
-                # Garante que a imagem seja redesenhada (como no seu exemplo)
-                item.refresh() 
-                self.log(f"✓ Imagem definida para {item_id} usando setPicturePath.")
-                
-            except AttributeError:
-                self.log(f"⚠ O item '{item_id}' não é um QgsLayoutItemPicture. Não pode usar setPicturePath.")
+                local_path = path_uri.replace('file:///', '', 1)
+                if not os.path.isfile(local_path):
+                    self.log(f" Arquivo não encontrado: {local_path}")
+                    continue
+
+                item.setPicturePath(local_path)
+                item.refresh()
+                self.log(f" Imagem aplicada: {item_id} ← {local_path}")
+
             except Exception as e:
-                self.log(f"Erro ao definir a imagem para {item_id}: {e}")
+                self.log(f" Erro ao aplicar imagem em {item_id}: {e}")

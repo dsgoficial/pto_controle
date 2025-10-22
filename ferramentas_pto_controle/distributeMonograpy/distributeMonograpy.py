@@ -40,16 +40,16 @@ class DistributeMonografia(QgsProcessingAlgorithm):
     TEMPLATE_QPT = 'TEMPLATE_QPT' # Adicionado parâmetro para o QPT
 
     def initAlgorithm(self, config=None):
-        self.addParameter(QgsProcessingParameterString(self.HOST, self.tr('Host do PostgreSQL'), defaultValue='localhost'))
-        self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), defaultValue=5432, type=QgsProcessingParameterNumber.Integer))
-        self.addParameter(QgsProcessingParameterString(self.DATABASE, self.tr('Banco de Dados'), defaultValue='treinamento'))
-        self.addParameter(QgsProcessingParameterString(self.USUARIO, self.tr('Usuário'), defaultValue='postgres'))
-        self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='senha123')) # isSecret=True para a senha
+        self.addParameter(QgsProcessingParameterString(self.HOST, self.tr('Host do PostgreSQL'), defaultValue=''))
+        self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), type=QgsProcessingParameterNumber.Integer))
+        self.addParameter(QgsProcessingParameterString(self.DATABASE, self.tr('Banco de Dados'), defaultValue=''))
+        self.addParameter(QgsProcessingParameterString(self.USUARIO, self.tr('Usuário'), defaultValue=''))
+        self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='')) # isSecret=True para a senha
 
         self.addParameter(QgsProcessingParameterFile(
             self.PASTA_ESTRUTURA, self.tr('Pasta com Estrutura dos Pontos'),
             behavior=QgsProcessingParameterFile.Folder,
-            defaultValue='C:\\Users\\kretzer\\Desktop\\Git\\pto_controle\\arquivos\\antes_processamento'
+            defaultValue=''
         ))
 
         # Adicionado parâmetro para o Template QPT
@@ -57,23 +57,23 @@ class DistributeMonografia(QgsProcessingAlgorithm):
              self.TEMPLATE_QPT, self.tr('Arquivo de Template QPT'),
              behavior=QgsProcessingParameterFile.File,
              fileFilter='Layout template (*.qpt)',
-             defaultValue=os.path.join(os.path.dirname(__file__), 'assets', 'modelo_teste0.qpt')
+             defaultValue=''
         ))
         
         # Remoção dos parâmetros LOGO, ASSINATURA, TIPO_MODELO e USAR_CROQUI se não forem usados na lógica QGIS/Atlas
         # Se você ainda precisar delas, mantenha, mas a lógica de uso deve ser movida para o Handle.
 
-        # self.addParameter(QgsProcessingParameterFile(
-        #      self.LOGO, self.tr('Logotipo'),
-        #      behavior=QgsProcessingParameterFile.File,
-        #      defaultValue='C:\Users\kretzer\Desktop\tutorial_pto_controle'
-        # ))
+        self.addParameter(QgsProcessingParameterFile(
+             self.LOGO, self.tr('Logotipo'),
+             behavior=QgsProcessingParameterFile.File,
+             defaultValue=''
+        ))
 
-        # self.addParameter(QgsProcessingParameterFile(
-        #      self.ASSINATURA, self.tr('Assinatura'),
-        #      behavior=QgsProcessingParameterFile.File,
-        #      defaultValue=''
-        # ))
+        self.addParameter(QgsProcessingParameterFile(
+             self.ASSINATURA, self.tr('Assinatura'),
+             behavior=QgsProcessingParameterFile.File,
+             defaultValue=''
+        ))
 
         self.addParameter(QgsProcessingParameterEnum(
              self.TIPO_MODELO, self.tr('Orientação da Página'),
