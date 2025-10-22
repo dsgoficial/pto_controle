@@ -6,7 +6,7 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterString,
-    QgsProcessingParameterVectorLayer, 
+    QgsProcessingParameterVectorLayer, # Mantenha a importação, mesmo que não seja usada
     QgsProcessingParameterFile,
     QgsProcessingParameterEnum,
     QgsProcessingParameterBoolean,
@@ -20,6 +20,8 @@ try:
     import psycopg2
 except ImportError:
     MISSING_DEPS.append('psycopg2-binary')
+
+# Importação do Handle será feita dentro de processAlgorithm
 
 
 class DistributeMonografia(QgsProcessingAlgorithm):
@@ -42,7 +44,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), defaultValue=5432, type=QgsProcessingParameterNumber.Integer))
         self.addParameter(QgsProcessingParameterString(self.DATABASE, self.tr('Banco de Dados'), defaultValue='treinamento'))
         self.addParameter(QgsProcessingParameterString(self.USUARIO, self.tr('Usuário'), defaultValue='postgres'))
-        self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='senha123')) 
+        self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='senha123')) # isSecret=True para a senha
 
         self.addParameter(QgsProcessingParameterFile(
             self.PASTA_ESTRUTURA, self.tr('Pasta com Estrutura dos Pontos'),
@@ -50,6 +52,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             defaultValue='C:\\Users\\kretzer\\Desktop\\Git\\pto_controle\\arquivos\\antes_processamento'
         ))
 
+        # Adicionado parâmetro para o Template QPT
         self.addParameter(QgsProcessingParameterFile(
              self.TEMPLATE_QPT, self.tr('Arquivo de Template QPT'),
              behavior=QgsProcessingParameterFile.File,
@@ -58,6 +61,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         ))
         
         # Remoção dos parâmetros LOGO, ASSINATURA, TIPO_MODELO e USAR_CROQUI se não forem usados na lógica QGIS/Atlas
+        # Se você ainda precisar delas, mantenha, mas a lógica de uso deve ser movida para o Handle.
 
         # self.addParameter(QgsProcessingParameterFile(
         #      self.LOGO, self.tr('Logotipo'),
@@ -79,6 +83,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterBoolean(
              self.USAR_CROQUI, self.tr('Usar Croqui Digital (se disponível)'), defaultValue=True
         ))
+        # Fim dos parâmetros não essenciais, mas mantidos
 
     def processAlgorithm(self, parameters, context, model_feedback):
         feedback = QgsProcessingMultiStepFeedback(3, model_feedback)
@@ -88,6 +93,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             return {}
 
         import psycopg2
+        # Importa o Handle atualizado do mesmo pacote
         from .handleDistributeMonograpy import HandleDistributeMonografia 
 
         host = self.parameterAsString(parameters, self.HOST, context)
@@ -107,6 +113,9 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         if not conn:
             feedback.reportError('Falha ao conectar ao banco.')
             return {}
+        
+        # O caminho do template QPT é obtido diretamente do parâmetro
+        # template_path = os.path.join(os.path.dirname(__file__), 'assets', 'modelo_teste0.qpt')
 
         handler = HandleDistributeMonografia(
             path=pasta_estrutura,
@@ -118,6 +127,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             tipo_modelo=tipo_modelo
         )
 
+        # 1. Obter a lista de pastas de pontos para iteração
         folders = handler.getFoldersFromStructure()
         total = len(folders)
         sucesso = 0
@@ -128,6 +138,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             conn.close()
             return {}
 
+        # 2. Iterar sobre as pastas (e, implicitamente, sobre os cod_ponto)
         for i, folder in enumerate(folders):
             if feedback.isCanceled():
                  break
@@ -137,6 +148,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
             feedback.pushInfo(f"Processando ponto: {cod_ponto}")
             
             try:
+                # 3. Chama o método que busca no banco, preenche o QPT e exporta o PDF
                 if handler.executeProcess(folder, tipo_modelo):
                     sucesso += 1
             except Exception as e:
