@@ -1,28 +1,16 @@
-# -*- coding: utf-8 -*-
 import os
-import sys
+import psycopg2
 from qgis.core import (
-    QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
     QgsProcessingParameterString,
-    QgsProcessingParameterVectorLayer, # Mantenha a importação, mesmo que não seja usada
     QgsProcessingParameterFile,
     QgsProcessingParameterEnum,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterNumber, 
 )
 from qgis.PyQt.QtCore import QCoreApplication
-
-MISSING_DEPS = []
-
-try:
-    import psycopg2
-except ImportError:
-    MISSING_DEPS.append('psycopg2-binary')
-
-# Importação do Handle será feita dentro de processAlgorithm
-
+from .handleDistributeMonography import HandleDistributeMonography 
 
 class DistributeMonografia(QgsProcessingAlgorithm):
     """Gera PDFs simples dos pontos de controle, sem ODT."""
@@ -37,7 +25,7 @@ class DistributeMonografia(QgsProcessingAlgorithm):
     USAR_CROQUI = 'USAR_CROQUI_DIGITAL'
     LOGO = 'LOGOTIPO'
     ASSINATURA = 'ASSINATURA'
-    TEMPLATE_QPT = 'TEMPLATE_QPT' # Adicionado parâmetro para o QPT
+    TEMPLATE_QPT = 'TEMPLATE_QPT'
 
     def initAlgorithm(self, config=None):
         self.plugin_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,7 +33,15 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), defaultValue=0, type=QgsProcessingParameterNumber.Integer))
         self.addParameter(QgsProcessingParameterString(self.DATABASE, self.tr('Banco de Dados'), defaultValue=''))
         self.addParameter(QgsProcessingParameterString(self.USUARIO, self.tr('Usuário'), defaultValue=''))
-        self.addParameter(QgsProcessingParameterString(self.SENHA, self.tr('Senha'), defaultValue='')) # isSecret=True para a senha
+        SENHA = QgsProcessingParameterString(
+            self.SENHA,
+            self.tr('Insira a senha do PostgreSQL'),
+        )
+        SENHA.setMetadata({
+            'widget_wrapper':
+            'ferramentas_pto_controle.utils.wrapper.MyWidgetWrapper'})
+
+        self.addParameter(SENHA)
 
         self.addParameter(QgsProcessingParameterFile(
             self.PASTA_ESTRUTURA, self.tr('Pasta com Estrutura dos Pontos'),
@@ -76,14 +72,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, model_feedback):
         feedback = QgsProcessingMultiStepFeedback(3, model_feedback)
-
-        if MISSING_DEPS:
-            feedback.reportError(f"Dependências ausentes: {', '.join(MISSING_DEPS)}")
-            return {}
-
-        import psycopg2
-        from .handleDistributeMonograpy import HandleDistributeMonografia 
-
         host = self.parameterAsString(parameters, self.HOST, context)
         porta = self.parameterAsInt(parameters, self.PORTA, context)
         database = self.parameterAsString(parameters, self.DATABASE, context)
@@ -94,73 +82,66 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         assinatura = self.parameterAsFile(parameters, self.ASSINATURA, context)
         tipo_modelo = self.parameterAsEnum(parameters, self.TIPO_MODELO, context)
         usar_croqui_digital = self.parameterAsBool(parameters, self.USAR_CROQUI, context)
-        modelo_index = self.parameterAsEnum(parameters, self.TIPO_MODELO, context)
 
-        retrato_qpt = os.path.join(self.plugin_dir, 'assets', 'modelo_teste0.qpt')
-        paisagem_qpt = os.path.join(self.plugin_dir, 'assets', 'modelo_teste_paisagem.qpt')
-        if modelo_index == 1:
+        retrato_qpt = os.path.join(self.plugin_dir, 'assets', 'modelo_retrato.qpt')
+        paisagem_qpt = os.path.join(self.plugin_dir, 'assets', 'modelo_paisagem.qpt')
+        if tipo_modelo == 1:
             template_qpt = retrato_qpt
-            feedback.pushInfo(' Usando modelo: Retrato')
+            feedback.pushInfo('Usando modelo: Retrato')
         else:
             template_qpt = paisagem_qpt
-            feedback.pushInfo(' Usando modelo: Paisagem')
+            feedback.pushInfo('Usando modelo: Paisagem')
 
         conn = self.getConnection(host, porta, database, usuario, senha, feedback)
         if not conn:
             feedback.reportError('Falha ao conectar ao banco.')
             return {}
 
-        handler = HandleDistributeMonografia(
-            path=pasta_estrutura,
+        handler = HandleDistributeMonography(
             conn=conn,
-            template_qpt=template_qpt, # Usa o template do parâmetro
+            path=pasta_estrutura,
+            template_qpt=template_qpt,
             settings={'LOGOTIPO': logotipo, 'signature': assinatura},
             digital=usar_croqui_digital,
             feedback=feedback,
             tipo_modelo=tipo_modelo
         )
-
-        # 1. Obter a lista de pastas de pontos para iteração
         folders = handler.getFoldersFromStructure()
         total = len(folders)
         sucesso = 0
         feedback.setCurrentStep(1)
         
-        if total == 0:
-            feedback.pushInfo("Nenhuma pasta de ponto encontrada na estrutura.")
+        try:
+            if total == 0:
+                feedback.pushInfo("Nenhuma pasta de ponto encontrada na estrutura.")
+                return {}
+            for i, folder in enumerate(folders):
+                if feedback.isCanceled():
+                    feedback.pushInfo("Processamento cancelado pelo usuário.")
+                    break
+                cod_ponto = folder.parts[-1]
+                feedback.setProgress((i / total) * 100)
+                feedback.pushInfo(f"Processando ponto: {cod_ponto}")
+                try:
+                    if handler.executeProcess(folder, tipo_modelo):
+                        sucesso += 1
+                except Exception as e:
+                    feedback.reportError(f"Erro em {cod_ponto}: {str(e)}")
+            feedback.pushInfo(f"{sucesso}/{total} PDFs gerados com sucesso.")
+            return {'total_gerado': sucesso}
+        finally:
             conn.close()
-            return {}
-
-        # 2. Iterar sobre as pastas (e, implicitamente, sobre os cod_ponto)
-        for i, folder in enumerate(folders):
-            if feedback.isCanceled():
-                 break
-                 
-            cod_ponto = folder.parts[-1]
-            feedback.setProgress((i / total) * 100)
-            feedback.pushInfo(f"Processando ponto: {cod_ponto}")
-            
-            try:
-                # 3. Chama o método que busca no banco, preenche o QPT e exporta o PDF
-                if handler.executeProcess(folder, tipo_modelo):
-                    sucesso += 1
-            except Exception as e:
-                feedback.reportError(f"Erro em {cod_ponto}: {str(e)}")
-
-        conn.close()
-        feedback.pushInfo(f"{sucesso}/{total} PDFs gerados com sucesso.")
-        return {'total_gerado': sucesso}
 
     def getConnection(self, host, port, db, user, password, feedback):
         try:
             conn = psycopg2.connect(host=host, port=port, database=db, user=user, password=password)
-            feedback.pushInfo('✓ Conectado ao banco.')
+            feedback.pushInfo('Conectado ao banco.')
             return conn
         except Exception as e:
             feedback.reportError(f'Erro ao conectar: {e}')
             return None
 
-    def name(self): return '09 - Distribuir monografia na estrutura de pastas'
+    def name(self): return '09 - Gerar e distribuir monografias nas pastas'
     def displayName(self): return self.tr(self.name())
     def group(self): return self.tr("Pós-processamento")
     def groupId(self): return "posprocessamento"
