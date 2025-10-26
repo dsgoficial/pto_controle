@@ -1,9 +1,0 @@
-Jinja2==2.11.3
-markdown2==2.5.3
-MarkupSafe==2.0.1
-numpy==2.2.2
-opencv-python==4.11.0.86
-psycopg2==2.9.10
-psycopg2-binary==2.9.10
-PyPDF2==3.0.1
-secretary==0.2.19
