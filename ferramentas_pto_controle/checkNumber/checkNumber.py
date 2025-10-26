@@ -27,7 +27,7 @@ class CheckNumber(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.FOLDEROUT,
-                self.tr('Pasta onde serão salvos os arquivos'),
+                self.tr('Pasta onde será salvo o .csv com os codigos disponíveis'),
                 behavior=QgsProcessingParameterFile.Folder
             )
         )
@@ -42,7 +42,7 @@ class CheckNumber(QgsProcessingAlgorithm):
         return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
-        return '14 - Verificar pontos'
+        return '14 - Verificar códigos de pontos disponíveis'
 
     def displayName(self):
         return self.tr(self.name())

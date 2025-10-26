@@ -167,7 +167,7 @@ class FixDateTrimble(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '13 - Corrigir Data Arquivo TRIMBLE'
+        return '13 - Corrigir ToW para TRIMBLE'
 
     def displayName(self):
         """

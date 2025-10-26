@@ -71,7 +71,7 @@ class ZipFoldersCheckpoints(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.FOLDEROUT,
-                self.tr('Selecionar a pasta onde serão salvos as pastas dos pontos de controle "zipados"'),
+                self.tr('Selecionar a pasta onde serão salvos as pastas dos pontos de controle compactadas'),
                 behavior=QgsProcessingParameterFile.Folder
             )
         )
