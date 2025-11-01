@@ -13,7 +13,6 @@ from datetime import timedelta, datetime
 
 class HandleDistributeMonography:
     def __init__(self, layer, feicao, path, template_qpt, settings=None, digital=True, feedback=None, tipo_modelo=None):
-        # self.conn = conn
         self.layer = layer
         self.feicao = feicao
         self.path = Path(path)
@@ -29,11 +28,6 @@ class HandleDistributeMonography:
             self.feedback.pushInfo(msg)
         else:
             print(msg)
-
-    # def fetchPointData(self, cod_ponto):
-    #     with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-    #         cur.execute(PointDataQueries.FETCH_POINT_WITH_DOMAINS, (cod_ponto,))
-    #         return cur.fetchone()
 
     def fetchPointData(self, cod_ponto):
         """Busca o ponto na camada de entrada com base no código do ponto."""
@@ -336,28 +330,3 @@ class HandleDistributeMonography:
 
             except Exception as e:
                 self.log(f" Erro ao aplicar imagem em {item_id}: {e}")
-
-# class PointDataQueries:    
-#     FETCH_POINT_WITH_DOMAINS = """
-#         SELECT *,
-#             dominios.tipo_ref.code_name as tipo_ref1,
-#             dominios.metodo_posicionamento.code_name as metodo_pos,
-#             dominios.referencial_altim.code_name as referencial_altim1,
-#             dominios.sistema_geodesico.code_name as sistema_geodesico1,
-#             dominios.orbita.code_name as orbita1,
-#             dominios.referencia_medicao_altura.code_name as refalt
-#         FROM bpc.ponto_controle_p
-#         INNER JOIN dominios.tipo_ref 
-#             ON dominios.tipo_ref.code = bpc.ponto_controle_p.tipo_ref
-#         INNER JOIN dominios.metodo_posicionamento 
-#             ON dominios.metodo_posicionamento.code = bpc.ponto_controle_p.metodo_posicionamento
-#         INNER JOIN dominios.referencial_altim 
-#             ON dominios.referencial_altim.code = bpc.ponto_controle_p.referencial_altim
-#         INNER JOIN dominios.sistema_geodesico 
-#             ON dominios.sistema_geodesico.code = bpc.ponto_controle_p.sistema_geodesico
-#         INNER JOIN dominios.orbita 
-#             ON dominios.orbita.code = bpc.ponto_controle_p.orbita
-#         INNER JOIN dominios.referencia_medicao_altura 
-#             ON dominios.referencia_medicao_altura.code = bpc.ponto_controle_p.referencia_medicao_altura
-#         WHERE cod_ponto = %s
-#     """

@@ -4,12 +4,10 @@ from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,
     QgsProcessingMultiStepFeedback,
-    QgsProcessingParameterString,
     QgsProcessingParameterFile,
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterEnum,
     QgsProcessingParameterBoolean,
-    QgsProcessingParameterNumber, 
 )
 from qgis.PyQt.QtCore import QCoreApplication
 from .handleDistributeMonography import HandleDistributeMonography 
@@ -17,11 +15,6 @@ from .handleDistributeMonography import HandleDistributeMonography
 class DistributeMonografia(QgsProcessingAlgorithm):
     """Gera PDFs simples dos pontos de controle, sem ODT."""
 
-    # HOST = 'HOST'
-    # PORTA = 'PORTA'
-    # DATABASE = 'DATABASE'
-    # USUARIO = 'USUARIO'
-    # SENHA = 'SENHA'
     CAMADA = 'CAMADA'
     SELECIONADA = 'SELECIONADA'
     PASTA_ESTRUTURA = 'PASTA_ESTRUTURA'
@@ -33,20 +26,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
 
     def initAlgorithm(self, config=None):
         self.plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        # self.addParameter(QgsProcessingParameterString(self.HOST, self.tr('Host do PostgreSQL'), defaultValue='localhost'))
-        # self.addParameter(QgsProcessingParameterNumber(self.PORTA, self.tr('Porta'), defaultValue=5432, type=QgsProcessingParameterNumber.Integer))
-        # self.addParameter(QgsProcessingParameterString(self.DATABASE, self.tr('Banco de Dados'), defaultValue='treinamento'))
-        # self.addParameter(QgsProcessingParameterString(self.USUARIO, self.tr('Usuário'), defaultValue='postgres'))
-        # SENHA = QgsProcessingParameterString(
-        #     self.SENHA,
-        #     self.tr('Insira a senha do PostgreSQL'),
-        # )
-        # SENHA.setMetadata({
-        #     'widget_wrapper':
-        #     'ferramentas_pto_controle.utils.wrapper.MyWidgetWrapper'})
-
-        # self.addParameter(SENHA)
-
         self.addParameter(
             QgsProcessingParameterVectorLayer(
                 self.CAMADA,
@@ -91,11 +70,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, model_feedback):
         feedback = QgsProcessingMultiStepFeedback(3, model_feedback)
-        # host = self.parameterAsString(parameters, self.HOST, context)
-        # porta = self.parameterAsInt(parameters, self.PORTA, context)
-        # database = self.parameterAsString(parameters, self.DATABASE, context)
-        # usuario = self.parameterAsString(parameters, self.USUARIO, context)
-        # senha = self.parameterAsString(parameters, self.SENHA, context)
         camada_input = self.parameterAsVectorLayer(parameters, self.CAMADA, context)
         feicao_selecionada = self.parameterAsBool(parameters, self.SELECIONADA, context)
         pasta_estrutura = self.parameterAsFile(parameters, self.PASTA_ESTRUTURA, context)
@@ -112,11 +86,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         else:
             template_qpt = paisagem_qpt
             feedback.pushInfo('Usando modelo: Paisagem')
-
-        # conn = self.getConnection(host, porta, database, usuario, senha, feedback)
-        # if not conn:
-        #     feedback.reportError('Falha ao conectar ao banco.')
-        #     return {}
 
         handler = HandleDistributeMonography(
             layer = camada_input,
@@ -152,16 +121,6 @@ class DistributeMonografia(QgsProcessingAlgorithm):
 
         feedback.pushInfo(f"{sucesso}/{total} PDFs gerados com sucesso.")
         return {'total_gerado': sucesso}
-
-
-    # def getConnection(self, host, port, db, user, password, feedback):
-    #     try:
-    #         conn = psycopg2.connect(host=host, port=port, database=db, user=user, password=password)
-    #         feedback.pushInfo('Conectado ao banco.')
-    #         return conn
-    #     except Exception as e:
-    #         feedback.reportError(f'Erro ao conectar: {e}')
-    #         return None
 
     def name(self): return '09 - Gerar e distribuir monografias nas pastas'
     def displayName(self): return self.tr(self.name())
