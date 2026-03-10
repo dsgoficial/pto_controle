@@ -4,7 +4,8 @@
 
 [general]
 name=Ponto Controle
-qgisMinimumVersion=3.34
+qgisMinimumVersion=4.0
+supportsQt6=True
 description=Ferramentas para a gerência de pontos de controle
 version=0.2
 author=1CGEO/DSG
