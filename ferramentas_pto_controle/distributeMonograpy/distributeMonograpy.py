@@ -1,5 +1,4 @@
 import os
-import psycopg2
 from qgis.core import (
     QgsProcessing,
     QgsProcessingAlgorithm,

@@ -29,13 +29,14 @@ chamada ao qgis_process, que custa segundos, entao fica em cache em disco,
 invalidado pela impressao digital do ambiente (ver `cache`). Escapes: `--no-check`
 pula a validacao e `--refresh-cache` forca reler o contrato ao vivo.
 
-Segredo
+Segredo (DORMENTE desde a troca do PostgreSQL pelo GeoPackage)
 -------
-Seis algoritmos falam com o PostgreSQL e recebem a senha como parametro. Senha na
-linha de comando vaza para o historico do shell e para o log de processo. Deixe a
-senha FORA da linha de comando: o CLI le PTOCONTROLE_DB_PASSWORD do ambiente quando
-o parametro de senha nao foi informado. Quando ela vem na linha de comando mesmo
-assim, o CLI avisa; em toda saida (dry-run, eco de parametros) o valor sai mascarado.
+Enquanto o plugin usava PostgreSQL, seis algoritmos recebiam a senha como
+parametro comum, e o CLI ganhou um guardrail para ela. Desde 2026-07-28 a missao e
+um arquivo GeoPackage e NENHUM algoritmo declara segredo, entao o guardrail nao
+dispara mais. Ele fica no codigo como rede: se algum dia um parametro de senha ou
+token voltar, o CLI le PTOCONTROLE_DB_PASSWORD do ambiente, avisa quando o valor
+vier na linha de comando, e mascara em toda saida.
 
 Exemplos
 --------
@@ -43,10 +44,8 @@ Exemplos
   python pto_controle_cli.py list
   python pto_controle_cli.py describe validarestrutura
   python pto_controle_cli.py run validarestrutura --dry-run \\
-      PASTA=D:\\pontos JSON=D:\\pontos\\json_validacao_estrutura_pasta.json
-  set PTOCONTROLE_DB_PASSWORD=...
-  python pto_controle_cli.py run criarbanco \\
-      SERVERIP=localhost PORT=5432 BDNAME=bpc USER=postgres
+      FOLDER=D:\\pontos JSON=D:\\pontos\\json_validacao_estrutura_pasta.json
+  python pto_controle_cli.py run criarbanco SAIDA=D:\\missoes\\missao.gpkg
 
 Codigos de saida: 0 sucesso, 2 reprovado na validacao local (nada foi executado),
 qualquer outro e o codigo do proprio qgis_process.

@@ -22,16 +22,14 @@
   },
   "ptocontrole:criarbanco": {
     "constraints": [
-      "Exige PostgreSQL com PostGIS ja instalado.",
-      "Se ja existir banco com o mesmo nome, a rotina NAO sobrescreve.",
-      "Nome de banco sem caractere especial e sem espaco.",
-      "A senha do PostgreSQL e parametro do algoritmo. Pela linha de comando, exporte PTOCONTROLE_DB_PASSWORD e omita o parametro, senao a senha fica no historico do shell."
+      "Desde 2026-07-28 cria um GeoPackage, e nao mais um banco PostGIS. Nao exige PostgreSQL nem PostGIS.",
+      "Arquivo existente NAO e sobrescrito. A rotina nao apaga nada.",
+      "O arquivo e copia da semente versionada em createDB/missao_semente.gpkg, derivada do new_db.sql. Se alguem mexer no schema e nao regerar a semente, a rotina RECUSA criar e diz o comando do conserto.",
+      "A chave estrangeira do GeoPackage e da CONEXAO, e nao do servidor: so vale com PRAGMA foreign_keys=ON. As rotinas do plugin ligam. Editar o atributo a mao pela tabela do QGIS nao liga, e ali da para gravar codigo de dominio inexistente.",
+      "A missao sai com 19 tabelas e 98 codigos de dominio semeados, e ocupa cerca de 236 KB vazia."
     ],
     "example": {
-      "SERVERIP": "localhost",
-      "PORT": 5432,
-      "BDNAME": "bpc",
-      "USER": "postgres"
+      "SAIDA": "D:\\missoes\\missao_2022-07-03.gpkg"
     }
   },
   "ptocontrole:validarestrutura": {

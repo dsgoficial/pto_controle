@@ -91,8 +91,11 @@ ALGORITMOS = algoritmos()
 
 
 def test_achou_os_algoritmos():
-    """Se este teste quebrar, os outros deste arquivo passariam por vacuidade."""
-    assert len(ALGORITMOS) == 15, [c.name for _, c in ALGORITMOS]
+    """Se este teste quebrar, os outros deste arquivo passariam por vacuidade.
+
+    Eram 15 ate 2026-07-28, quando o P17 (preparar a missao para o Controle do
+    Acervo) entrou. Ao acrescentar algoritmo, ajuste este numero de PROPOSITO."""
+    assert len(ALGORITMOS) == 16, [c.name for _, c in ALGORITMOS]
 
 
 @pytest.mark.parametrize("caminho,classe", ALGORITMOS, ids=lambda x: getattr(x, "name", ""))

@@ -20,7 +20,6 @@ reference:
 from collections import defaultdict
 from pathlib import Path
 import shutil
-import psycopg2
 import os
 from qgis.core import QgsVectorLayer
 from qgis.PyQt.QtCore import QCoreApplication

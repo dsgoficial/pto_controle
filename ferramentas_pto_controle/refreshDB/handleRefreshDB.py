@@ -23,17 +23,23 @@ import csv
 import re
 import json
 from pathlib import Path
-import psycopg2
 import pyproj
 import shutil
+from datetime import datetime, timedelta
+
+from ..utils.missao import (
+    conecta,
+    colunas_da_tabela,
+    upsert_ponto,
+    recontar_controle_medicao,
+)
 
 
 class HandleRefreshDB():
-    def __init__(self, pasta, servidor, porta, nome_bd, usuario, senha, json_file):
+    def __init__(self, pasta, missao, json_file):
         self.pasta = Path(pasta)
-        conn_string = "host='{0}' port='{1}' dbname='{2}' user='{3}' password='{4}'".format(
-            servidor, porta, nome_bd, usuario, senha)
-        self.conn = psycopg2.connect(conn_string)
+        self.conn = conecta(missao)
+        self.colunas = colunas_da_tabela(self.conn, 'ponto_controle_p')
         with open(json_file) as setting:
             self.defaults = json.load(setting)['default']
 
@@ -78,33 +84,50 @@ class HandleRefreshDB():
         return points
 
     def upsert(self, points):
+        """Grava os pontos na missao. Devolve (resumo, avisos).
+
+        O `upsert_ponto` espelha o `ON CONFLICT ... WHERE tipo_situacao IN
+        (1,2,4,9999)` que existia no PostGIS: ponto ja APROVADO nao se sobrescreve
+        por recarga de pasta.
+
+        A chave que a tabela nao tem deixa de entrar CALADA. Antes ela ia direto
+        para o SQL e derrubava a carga (ou pior, casava com outra coluna); agora
+        ela e descartada e RELATADA, que e o gesto que este vault ja pagou caro
+        para aprender.
+        """
+        resumo = {'inseridos': 0, 'atualizados': 0, 'preservados': 0}
+        avisos = []
+        traducao = {
+            'inserido': 'inseridos',
+            'atualizado': 'atualizados',
+            'preservado': 'preservados',
+        }
         for point in points:
-            str_key = ''
-            str_value = ''
-            debug = ''
-            lista = list(point.items())
-            for key, value in lista:
-                str_key += '{},'.format(key)
-                if value:
-                    str_value += "'{}',".format(value)
-                else:
-                    str_value += "DEFAULT,"
-                debug += '{} : {}\n'.format(key, value)
-            with self.conn.cursor() as cursor:
-                cursor.execute(u"""
-                INSERT INTO bpc.ponto_controle_p ({keys}, geom)
-                VALUES ({values}, ST_GeomFromText('POINT({longitude} {latitude})', 4674))
-                ON CONFLICT (cod_ponto)
-                DO
-                UPDATE
-                    SET ({keys}, geom) = ({values}, ST_GeomFromText('POINT({longitude} {latitude})', 4674))
-                    WHERE ponto_controle_p.tipo_situacao in (1,2,4,9999);
-                """.format(keys=str_key[:-1], values=str_value[:-1], **point))
-                croqui, arq_rastreio, fotos = self.getAdditionalInfo(point)
-                cursor.execute(u'''
-                UPDATE bpc.ponto_controle_p SET (numero_fotos, possui_croqui, possui_arquivo_rastreio, tipo_situacao, latitude, longitude) = ({}, {}, {}, 2, NULL, NULL) WHERE cod_ponto = '{}'
-                '''.format(fotos, bool(croqui), bool(arq_rastreio), point['cod_ponto']))
+            acao, descartadas = upsert_ponto(self.conn, point, self.colunas)
+            resumo[traducao[acao]] += 1
+            if descartadas:
+                avisos.append(
+                    "AVISO: {} - coluna que a tabela nao tem, descartada: {}".format(
+                        point.get('cod_ponto', '?'), ', '.join(descartadas)
+                    )
+                )
+            if acao == 'preservado':
+                continue
+            croqui, arq_rastreio, fotos = self.getAdditionalInfo(point)
+            self.conn.execute(
+                'UPDATE ponto_controle_p SET numero_fotos = ?, possui_croqui = ?,'
+                ' possui_arquivo_rastreio = ?, tipo_situacao = 2,'
+                ' latitude = NULL, longitude = NULL WHERE cod_ponto = ?',
+                (fotos, bool(croqui), bool(arq_rastreio), point['cod_ponto']),
+            )
         self.conn.commit()
+        return resumo, avisos
+
+    def recontar(self):
+        """A recontagem que era trigger no PostGIS. Aqui e explicita e por lote."""
+        tocados = recontar_controle_medicao(self.conn)
+        self.conn.commit()
+        return tocados
 
     def getAdditionalInfo(self, point):
         croqui = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '4_Croqui' and x.match('*{}_CROQUI.*'.format(point['cod_ponto']))]
@@ -171,16 +194,35 @@ class HandleRefreshDB():
 
 
 def createTimeStamp(points):
+    """Monta inicio_rastreio e fim_rastreio no DATETIME do GeoPackage.
+
+    Antes saia '2022-07-03 09:05 -3', que e literal de timestamptz do PostgreSQL e
+    so o PostgreSQL entende.
+
+    O GeoPackage exige o ISO 8601 em UTC, com milissegundos e 'Z'
+    ('2022-07-03T12:05:00.000Z'). Escrever com deslocamento local
+    ('...-03:00') faz o GDAL avisar "non-conformant content, successfully
+    parsed": ele aceita hoje, e tolerancia assim e o tipo de coisa que vira erro
+    numa versao seguinte. A hora do medidor vem no fuso dele (coluna
+    fuso_horario, padrao -3) e e convertida aqui.
+    """
     for point in points:
+        fuso = point.pop('fuso_horario', -3)
         try:
-            fuso = point['fuso_horario']
-        except KeyError:
-            point['fuso_horario'] = -3
-        point['inicio_rastreio'] = '{} {} {}'.format(point['data_rastreio'], point['inicio_rastreio'], point['fuso_horario'])
-        point['fim_rastreio'] = '{} {} {}'.format(point['data_rastreio'], point['fim_rastreio'], point['fuso_horario'])
+            horas = int(float(fuso))
+        except (TypeError, ValueError):
+            horas = -3
+        for campo in ('inicio_rastreio', 'fim_rastreio'):
+            hora = str(point[campo]).strip()
+            if len(hora) == 5:  # HH:MM, que e o que o CSV do medidor traz
+                hora += ':00'
+            local = datetime.strptime(
+                '{} {}'.format(point['data_rastreio'], hora), '%Y-%m-%d %H:%M:%S'
+            )
+            utc = local - timedelta(hours=horas)
+            point[campo] = utc.strftime('%Y-%m-%dT%H:%M:%S.000Z')
         point['altura_antena'] = point['altura_antena'].replace(',', '.')
         point['altura_objeto'] = point['altura_objeto'].replace(',', '.')
-        del point['fuso_horario']
     return points
 
 def transform(x, y, z):
@@ -189,9 +231,7 @@ def transform(x, y, z):
     return pyproj.transform(ecef, lla, x, y, z, radians=False)
 
 if __name__ == '__main__':
-    atualiza_db = HandleRefreshDB(sys.argv[1], sys.argv[2],
-                                  sys.argv[3], sys.argv[4],
-                                  sys.argv[5], sys.argv[6], sys.argv[7])
+    atualiza_db = HandleRefreshDB(sys.argv[1], sys.argv[2], sys.argv[3])
     values = atualiza_db.getPointsFromCSV()
     points2 = atualiza_db.getCoordsFromRinex(values)
     atualiza_db.upsert(points2)

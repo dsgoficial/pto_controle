@@ -21,19 +21,13 @@ from collections import defaultdict
 from qgis.core import QgsProcessingException
 from pathlib import Path
 import re
-import psycopg2
+
+from ..utils.missao import conecta
 
 class HandleUpdateFieldWithPathFiles():
-    def __init__(self, servidor, porta, nome_bd, usuario, senha):
-        self.server = servidor
-        self.port = porta
-        self.bdname = nome_bd
-        self.user = usuario
-        self.password = senha
-        conn_string = "host='{0}' port='{1}' dbname='{2}' user='{3}' password='{4}'".format(
-            servidor, porta, nome_bd, usuario, senha
-        )
-        self.conn = psycopg2.connect(conn_string)
+    def __init__(self, missao):
+        self.conn = conecta(missao)
+        self.atualizados = 0
     
     def getPathRinex(self, folder):
         rinex_files = [x for x in Path(folder).rglob('2_RINEX/*') if re.match(r"^([A-Z]{2})-(HV|Base|BASE)-[1-9]+[0-9]*\.\d\d[o|O]", x.name)]
@@ -97,22 +91,40 @@ class HandleUpdateFieldWithPathFiles():
                     return f"A monografia do ponto: {codPonto} está errado ou está faltando."
                 if codPonto not in dictCodPontoRinex:
                     return f"O arquivo RINEX do ponto: {codPonto} está errado ou está faltando."
-                with self.conn.cursor() as cursor:
-                    cursor.execute(u'''
-                    UPDATE bpc.ponto_controle_p SET (
-                        endereco_imagem_lateral_1,
-                        endereco_imagem_lateral_2,
-                        endereco_imagem_lateral_3,
-                        endereco_imagem_lateral_4,
-                        endereco_imagem_aerea,
-                        endereco_monografia,
-                        endereco_croqui,
-                        endereco_rinex) = ('{}', '{}', '{}', '{}', '{}', '{}', '{}', '{}') 
-                    WHERE cod_ponto = '{}'
-                    '''.format(str(dictCodPontoImages[codPonto][0]), str(dictCodPontoImages[codPonto][1]), str(dictCodPontoImages[codPonto][2]), str(dictCodPontoImages[codPonto][3]), str(dictCodPontoImages[codPonto][4]), str(dictCodPontoMonografia[codPonto][0]), str(dictCodPontoCroqui[codPonto][0]), str(dictCodPontoRinex[codPonto][0]), codPonto))
+                imagens = dictCodPontoImages[codPonto]
+                if len(imagens) < 5:
+                    return (
+                        f"O ponto {codPonto} tem {len(imagens)} imagens; são "
+                        "necessárias 4 laterais mais a aérea."
+                    )
+                cursor = self.conn.execute(
+                    'UPDATE ponto_controle_p SET'
+                    ' endereco_imagem_lateral_1 = ?, endereco_imagem_lateral_2 = ?,'
+                    ' endereco_imagem_lateral_3 = ?, endereco_imagem_lateral_4 = ?,'
+                    ' endereco_imagem_aerea = ?, endereco_monografia = ?,'
+                    ' endereco_croqui = ?, endereco_rinex = ?'
+                    ' WHERE cod_ponto = ?',
+                    (
+                        str(imagens[0]), str(imagens[1]), str(imagens[2]),
+                        str(imagens[3]), str(imagens[4]),
+                        str(dictCodPontoMonografia[codPonto][0]),
+                        str(dictCodPontoCroqui[codPonto][0]),
+                        str(dictCodPontoRinex[codPonto][0]),
+                        codPonto,
+                    ),
+                )
+                if cursor.rowcount == 0:
+                    return (
+                        f"O ponto {codPonto} não existe na missão. Rode o P03 "
+                        "(atualizar banco) antes deste passo."
+                    )
+                self.atualizados += 1
             self.conn.commit()
-            msg = "Processamento Concluído"
-            return msg
-        except:
-            msg = "O database precisa ser atualizado com as colunas dos paths dos arquivos"
-            return msg
+            return f"Processamento Concluído. {self.atualizados} ponto(s) atualizado(s)."
+        except Exception as erro:
+            # Antes havia um `except:` nu que devolvia sempre "o database precisa
+            # ser atualizado com as colunas dos paths". Com a missao vinda da
+            # semente essas colunas SEMPRE existem, entao a mensagem seria falsa e
+            # esconderia a causa real. Agora o erro aparece.
+            self.conn.rollback()
+            return f"Falhou ao gravar os caminhos: {type(erro).__name__}: {erro}"

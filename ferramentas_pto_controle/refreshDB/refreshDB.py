@@ -53,17 +53,9 @@ class RefreshDB(QgsProcessingAlgorithm):
     OUTPUT = 'OUTPUT'
     FOLDER = 'FOLDER'
     JSON = 'JSON'
-    SERVERIP = 'SERVERIP'
-    PORT = 'PORT'
-    BDNAME = 'BDNAME'
-    USER = 'USER'
-    PASSWORD = 'PASSWORD'
+    MISSAO = 'MISSAO'
 
-    def initAlgorithm(self, config):
-        """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
-        """
+    def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.FOLDER,
@@ -78,62 +70,32 @@ class RefreshDB(QgsProcessingAlgorithm):
                 extension='json'
             )
         )
-
         self.addParameter(
-            QgsProcessingParameterString(
-                self.SERVERIP,
-                self.tr('Insira o IP do computador')
+            QgsProcessingParameterFile(
+                self.MISSAO,
+                self.tr('Arquivo da missão (GeoPackage), criado no P01'),
+                extension='gpkg'
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.PORT,
-                self.tr('Insira a porta'),
-                defaultValue = 5432
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.BDNAME,
-                self.tr('Insira o nome do banco de dados'),
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.USER,
-                self.tr('Insira o usuário do PostgreSQL'),
-            )
-        )
-
-        password = QgsProcessingParameterString(
-            self.PASSWORD,
-            self.tr('Insira a senha do PostgreSQL'),
-        )
-        password.setMetadata({
-            'widget_wrapper':
-            'ferramentas_pto_controle.utils.wrapper.MyWidgetWrapper'})
-
-        self.addParameter(password)
 
     def processAlgorithm(self, parameters, context, feedback):
-        """
-        Here is where the processing itself takes place.
-        """
         folder = self.parameterAsFile(parameters, self.FOLDER, context)
-        server_ip = self.parameterAsString(parameters, self.SERVERIP, context)
-        port = self.parameterAsInt(parameters, self.PORT, context)
-        bdname = self.parameterAsString(parameters, self.BDNAME, context)
-        user = self.parameterAsString(parameters, self.USER, context)
-        password = self.parameterAsString(parameters, self.PASSWORD, context)
         json = self.parameterAsFile(parameters, self.JSON, context)
+        missao = self.parameterAsFile(parameters, self.MISSAO, context)
 
-        refresh = HandleRefreshDB(folder, server_ip, port, bdname, user, password, json)
+        refresh = HandleRefreshDB(folder, missao, json)
         points = refresh.getPointsFromCSV()
         points2 = refresh.getCoordsFromRinex(points)
-        refresh.upsert(points2)
+        resumo, avisos = refresh.upsert(points2)
+        for aviso in avisos:
+            feedback.reportError(aviso)
+        feedback.pushInfo(
+            'Pontos: {inseridos} inseridos, {atualizados} atualizados, '
+            '{preservados} preservados por já estarem aprovados.'.format(**resumo)
+        )
+        feedback.pushInfo(
+            f'Polígonos de controle recontados: {refresh.recontar()}'
+        )
         msg = refresh.create()
         feedback.pushInfo(f"{msg}")
 
@@ -184,6 +146,10 @@ class RefreshDB(QgsProcessingAlgorithm):
             - Esta rotina APAGA a pasta 3_Foto_Rastreio original. Ela recomprime as fotos para jpeg numa pasta nova e substitui a antiga. Exige a biblioteca Pillow no Python do QGIS.
             - Grava tipo_situacao_id como "Aguardando Revisão".
             - Confira o objeto "default" do JSON antes de rodar: é ele que preenche o que o CSV do medidor não traz.
+
+            Desde a troca do PostgreSQL pelo GeoPackage, esta rotina escreve no arquivo da missão criado no P01. Sumiram os cinco parâmetros de conexão.
+            - Coluna que o CSV traz e a tabela não tem é DESCARTADA e RELATADA no log, em vez de derrubar a carga.
+            - A contagem de pontos por polígono de controle, que no PostgreSQL era trigger automático, agora roda ao fim desta rotina.
             ''')
 
     def shortDescription(self):

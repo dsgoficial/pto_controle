@@ -54,17 +54,9 @@ class PathFilesInAttribute(QgsProcessingAlgorithm):
     """
     OUTPUT = 'OUTPUT'
     FOLDERIN = 'FOLDERIN'
-    SERVERIP = 'SERVERIP'
-    PORT = 'PORT'
-    BDNAME = 'BDNAME'
-    USER = 'USER'
-    PASSWORD = 'PASSWORD'
+    MISSAO = 'MISSAO'
 
-    def initAlgorithm(self, config):
-        """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
-        """
+    def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterFile(
                 self.FOLDERIN,
@@ -72,59 +64,19 @@ class PathFilesInAttribute(QgsProcessingAlgorithm):
                 behavior=QgsProcessingParameterFile.Folder
             )
         )
-
         self.addParameter(
-            QgsProcessingParameterString(
-                self.SERVERIP,
-                self.tr('Insira o IP do computador')
+            QgsProcessingParameterFile(
+                self.MISSAO,
+                self.tr('Arquivo da missão (GeoPackage), criado no P01'),
+                extension='gpkg'
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.PORT,
-                self.tr('Insira a porta'),
-                minValue=0,
-                maxValue=9999,
-                defaultValue=5432
-            )
-        )
-        BDNAME = ValidationString(
-            self.BDNAME,
-            description=self.tr(
-                'Insira o nome do banco')
-        )
-        self.addParameter(BDNAME)
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.USER,
-                self.tr('Insira o usuário do PostgreSQL'),
-            )
-        )
-
-        password = QgsProcessingParameterString(
-            self.PASSWORD,
-            self.tr('Insira a senha do PostgreSQL'),
-        )
-        password.setMetadata({
-            'widget_wrapper':
-            'ferramentas_pto_controle.utils.wrapper.MyWidgetWrapper'})
-
-        self.addParameter(password)
 
     def processAlgorithm(self, parameters, context, feedback):
-        """
-        Here is where the processing itself takes place.
-        """
         folderIn = self.parameterAsFile(parameters, self.FOLDERIN, context)
-        server_ip = self.parameterAsString(parameters, self.SERVERIP, context)
-        port = self.parameterAsInt(parameters, self.PORT, context)
-        bdname = self.parameterAsString(parameters, self.BDNAME, context)
-        user = self.parameterAsString(parameters, self.USER, context)
-        password = self.parameterAsString(parameters, self.PASSWORD, context)
+        missao = self.parameterAsFile(parameters, self.MISSAO, context)
 
-        db = HandleUpdateFieldWithPathFiles(server_ip, port, bdname, user, password)
+        db = HandleUpdateFieldWithPathFiles(missao)
         msg = db.updateDBPathFiles(folderIn)
 
         return {self.OUTPUT: msg}
@@ -171,6 +123,9 @@ class PathFilesInAttribute(QgsProcessingAlgorithm):
             Depois: habilita o P12, que baixa os arquivos por esses caminhos.
 
             Atenção: o caminho gravado é o do momento da execução. Mover a estrutura de pastas depois disso quebra os links, e é preciso rodar de novo.
+
+            Desde a troca do PostgreSQL pelo GeoPackage, esta rotina escreve no arquivo da missão criado no P01.
+            - O caminho gravado é ABSOLUTO e do momento da execução. Como a missão viaja como arquivo, mover a estrutura de pastas depois disso quebra os links.
             ''')
 
     def shortDescription(self):

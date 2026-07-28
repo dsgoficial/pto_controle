@@ -5,14 +5,14 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import psycopg2
+from ..utils.missao import conecta, ponto_gpkg, recontar_controle_medicao
 
 class HandleRefreshFromPPP():
 
-    def __init__(self, path, host, port, db_name, user, password):
+    def __init__(self, path, missao):
         self.folder = Path(path)
-        self.conn = psycopg2.connect("host='{0}' port='{1}' dbname='{2}' user='{3}' password='{4}'".format(
-            host, port, db_name, user, password))
+        self.conn = conecta(missao)
+        self.atualizados = 0
         self.map_orbit = {
             'ULTRA-RÁPIDA': 2,
             'RÁPIDA': 3,
@@ -84,15 +84,45 @@ class HandleRefreshFromPPP():
                 self.updateDB(point)
 
     def updateDB(self, point):
-        with self.conn.cursor() as cursor:
-            cursor.execute(u'''
-            UPDATE bpc.ponto_controle_p
-            SET norte='{norte}', leste='{leste}', altitude_geometrica='{altitude_geometrica}', altitude_ortometrica='{altitude_ortometrica}',
-            freq_processada='{freq_processada}', latitude='{latitude}', longitude='{longitude}', geom=ST_GeomFromText('POINT({longitude} {latitude})', 4674),
-            data_processamento='{data_processamento}', meridiano_central='{meridiano_central}', orbita={orbita}, modelo_geoidal='{modelo_geoidal}', fuso='{fuso}'
-            WHERE cod_ponto='{cod_ponto}'
-            '''.format(**point))
-            self.conn.commit()
+        """Grava o resultado do PPP no ponto.
+
+        Vai por PARAMETRO, e nao por interpolacao na string. A data de
+        processamento sai como ISO, que e o formato que o GeoPackage le sem
+        depender de configuracao.
+        """
+        data = point['data_processamento']
+        if hasattr(data, 'strftime'):
+            data = data.strftime('%Y-%m-%d')
+        cursor = self.conn.execute(
+            'UPDATE ponto_controle_p SET norte = ?, leste = ?,'
+            ' altitude_geometrica = ?, altitude_ortometrica = ?,'
+            ' freq_processada = ?, latitude = ?, longitude = ?, geom = ?,'
+            ' data_processamento = ?, meridiano_central = ?, orbita = ?,'
+            ' modelo_geoidal = ?, fuso = ? WHERE cod_ponto = ?',
+            (
+                point['norte'], point['leste'],
+                point['altitude_geometrica'], point['altitude_ortometrica'],
+                point['freq_processada'], point['latitude'], point['longitude'],
+                ponto_gpkg(point['longitude'], point['latitude']),
+                data, point['meridiano_central'], point['orbita'],
+                point['modelo_geoidal'], point['fuso'],
+                point['cod_ponto'],
+            ),
+        )
+        if cursor.rowcount == 0:
+            # Ponto processado que nao existe na missao quer dizer que o P03 nao
+            # rodou para ele, ou que o codigo diverge. Calar aqui perderia o dado.
+            raise ValueError(
+                f"o ponto {point['cod_ponto']} nao existe na missao. "
+                "Rode o P03 (atualizar banco) antes deste passo."
+            )
+        self.atualizados += 1
+        self.conn.commit()
+
+    def recontar(self):
+        tocados = recontar_controle_medicao(self.conn)
+        self.conn.commit()
+        return tocados
 
     @staticmethod
     def evaluateCoords(lat, lon):

@@ -184,6 +184,8 @@ class DownloadFiles(QgsProcessingAlgorithm):
             Atenção:
             - A rotina só baixa os pontos SELECIONADOS na camada, no mapa do QGIS. Sem seleção não baixa nada e não reclama.
             - Por depender de seleção no mapa, esta é a rotina menos útil em execução headless.
+
+            Esta rotina lê os caminhos da CAMADA carregada no QGIS, e não do banco. Ela funciona com a camada do arquivo da missão, sem mudança.
             ''')
 
     def shortDescription(self):

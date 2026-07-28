@@ -27,95 +27,50 @@ __copyright__ = '(C) 2019 by 1CGEO/DSG'
 
 __revision__ = '$Format:%H$'
 
-from qgis.core import (QgsProcessing,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingParameterString,
-                       QgsProcessingParameterNumber)
+from qgis.core import (QgsProcessingAlgorithm,
+                       QgsProcessingException,
+                       QgsProcessingParameterFileDestination)
 from qgis.PyQt.QtCore import QCoreApplication
-import re
-from .handleCreateDB import HandleCreateDB
+from .gpkg_schema import criar_missao
 
 
 class CreateDatabase(QgsProcessingAlgorithm):
-    """
-    This is an example algorithm that takes a vector layer and
-    creates a new identical one.
+    """Cria o GeoPackage da missao, copiando a semente versionada no plugin."""
 
-    It is meant to be used as an example of how to create your own
-    algorithms and explain methods and variables used to do it. An
-    algorithm like this will be available in all elements, and there
-    is not need for additional work.
-
-    All Processing algorithms should extend the QgsProcessingAlgorithm
-    class.
-    """
     OUTPUT = 'OUTPUT'
-    SERVERIP = 'SERVERIP'
-    PORT = 'PORT'
-    BDNAME = 'BDNAME'
-    USER = 'USER'
-    PASSWORD = 'PASSWORD'
+    SAIDA = 'SAIDA'
 
-    def initAlgorithm(self, config):
-        """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
-        """
+    def initAlgorithm(self, config=None):
         self.addParameter(
-            QgsProcessingParameterString(
-                self.SERVERIP,
-                self.tr('Insira o IP do computador')
+            QgsProcessingParameterFileDestination(
+                self.SAIDA,
+                self.tr('Arquivo da missão (GeoPackage) a ser criado'),
+                fileFilter='GeoPackage (*.gpkg)'
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.PORT,
-                self.tr('Insira a porta'),
-                minValue=0,
-                maxValue=9999,
-                defaultValue=5432
-            )
-        )
-        
-        BDNAME = ValidationString(
-            self.BDNAME,
-            description=self.tr(
-                'Insira o nome do banco')
-        )
-        self.addParameter(BDNAME)
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.USER,
-                self.tr('Insira o usuário do PostgreSQL'),
-            )
-        )
-
-        password = QgsProcessingParameterString(
-            self.PASSWORD,
-            self.tr('Insira a senha do PostgreSQL'),
-        )
-        password.setMetadata({
-            'widget_wrapper':
-            'ferramentas_pto_controle.utils.wrapper.MyWidgetWrapper'})
-
-        self.addParameter(password)
 
     def processAlgorithm(self, parameters, context, feedback):
-        """
-        Here is where the processing itself takes place.
-        """
-        server_ip = self.parameterAsString(parameters, self.SERVERIP, context)
-        port = self.parameterAsInt(parameters, self.PORT, context)
-        bdname = self.parameterAsString(parameters, self.BDNAME, context)
-        user = self.parameterAsString(parameters, self.USER, context)
-        password = self.parameterAsString(parameters, self.PASSWORD, context)
+        saida = self.parameterAsFileOutput(parameters, self.SAIDA, context)
+        if not saida.lower().endswith('.gpkg'):
+            saida += '.gpkg'
 
-        db = HandleCreateDB(server_ip, port, bdname, user, password)
-        db.create()
+        feedback.pushInfo('Criando a missão a partir da semente do plugin...')
+        try:
+            # A copia confere, antes de tudo, se a semente corresponde ao
+            # new_db.sql de hoje. Semente defasada entregaria uma missao com
+            # schema velho, com confianca e sem aviso.
+            criado = criar_missao(saida)
+        except FileExistsError as erro:
+            raise QgsProcessingException(str(erro))
+        except (FileNotFoundError, RuntimeError) as erro:
+            raise QgsProcessingException(str(erro))
 
-        return {self.OUTPUT: 'Processamento Concluído'}
+        feedback.pushInfo(f'Missão criada: {criado}')
+        feedback.pushInfo(
+            'Carregue a camada ponto_controle_p deste arquivo no QGIS para '
+            'acompanhar a missão.'
+        )
+        return {self.OUTPUT: str(criado)}
 
     def name(self):
         """
@@ -153,20 +108,22 @@ class CreateDatabase(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr('''
-            P01, primeiro passo do fluxo. Cria o banco PostGIS estruturado do ponto de controle, com os schemas de domínio e o bpc.
+            P01, primeiro passo do fluxo. Cria o arquivo GeoPackage da missão, já com as tabelas do ponto de controle e os códigos de domínio semeados.
 
-            Antes: o PostgreSQL com PostGIS já instalado, e um usuário com permissão de criar banco.
+            Antes: nada. Não precisa mais de PostgreSQL nem de PostGIS.
             Depois: P02, validar a estrutura de pastas.
 
+            A missão é um arquivo só, que se copia, se leva a campo e se anexa num e-mail.
+
             Atenção:
-            - Banco com o mesmo nome NÃO é sobrescrito. A rotina não apaga nada.
-            - Use nome sem espaço e sem caractere especial.
-            - Pela linha de comando, exporte PTOCONTROLE_DB_PASSWORD em vez de passar a senha como parâmetro.
+            - Arquivo existente NÃO é sobrescrito. A rotina não apaga nada.
+            - O arquivo nasce de uma semente versionada no plugin. Se alguém mexer no schema e não regerar a semente, a rotina RECUSA criar e diz o comando do conserto.
+            - A chave estrangeira do GeoPackage é da CONEXÃO, não do servidor. As rotinas do plugin a ligam. Editar o atributo à mão pela tabela do QGIS não liga, e ali dá para gravar código de domínio inexistente.
             ''')
 
     def shortDescription(self):
         return self.tr(
-            'P01, primeiro passo do fluxo. Cria o banco PostGIS estruturado do ponto de controle, com os schemas de domínio e o bpc.'
+            'P01, primeiro passo do fluxo. Cria o arquivo GeoPackage da missão, já com as tabelas do ponto de controle e os códigos de domínio semeados.'
         )
 
     def tr(self, string):
@@ -174,8 +131,3 @@ class CreateDatabase(QgsProcessingAlgorithm):
 
     def createInstance(self):
         return CreateDatabase()
-
-class ValidationString(QgsProcessingParameterString):
-    def checkValueIsAcceptable(self, value, context=None):
-        if re.match(r"^[A-Za-z0-9]+$", value):
-            return True

@@ -123,11 +123,26 @@ def test_describe_devolve_contrato_de_verdade(tabela):
     assert data is not None, f"help falhou (exit {code})"
     params = data.get("parameters", {})
     assert params, "contrato sem parametros"
-    # Nao se afirma o nome dos parametros aqui: quem manda e o contrato vivo. O que
-    # se afirma e que ele TEM parametro de senha, porque disso depende o guardrail.
-    assert any(cli.RE_SEGREDO.search(n) for n in params), (
-        f"esperava um parametro de senha em {alg}; achei {sorted(params)}"
+    # Desde a troca do PostgreSQL pelo GeoPackage, o P01 recebe um destino de
+    # arquivo e mais nada. Nao se afirma o NOME do parametro aqui, que e do
+    # contrato vivo; afirma-se que ha uma saida de arquivo.
+    assert any(p.get("is_destination") for p in params.values()), (
+        f"esperava um parametro de saida em {alg}; achei {sorted(params)}"
     )
+
+
+@needs_qgis
+def test_o_p01_nao_pede_mais_senha(tabela):
+    """A troca do PostgreSQL pelo GeoPackage tirou os 5 parametros de conexao.
+
+    Se a senha reaparecer aqui, alguem reintroduziu o caminho do banco remoto,
+    e com ele o problema de segredo na linha de comando."""
+    if "criarbanco" not in tabela:
+        pytest.skip("criarbanco nao esta na lista")
+    data, _code, _cached = cli.help_json_cached("ptocontrole:criarbanco")
+    params = data.get("parameters", {})
+    segredos = [n for n in params if cli.RE_SEGREDO.search(n)]
+    assert not segredos, f"o P01 voltou a pedir segredo: {segredos}"
 
 
 @needs_qgis

@@ -29,7 +29,9 @@ __copyright__ = '(C) 2019 by 1CGEO/DSG'
 
 __revision__ = '$Format:%H$'
 
-import subprocess
+import re
+import sqlite3
+from datetime import datetime
 from pathlib import Path
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
@@ -40,6 +42,102 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterEnum)
 from qgis.PyQt.QtCore import QCoreApplication
 from .handleLoadToBPC import HandleLoadToBPC
+
+
+def _cpf_so_digitos(valor):
+    """O que o `regexp_replace(cpf, '\\D','','g')` do PostGIS fazia.
+
+    O SQLite nao tem regexp_replace, entao a limpeza vem para o Python. Devolve
+    None quando nao sobra digito, que e o `NULLIF(..., '')` do original.
+    """
+    if not valor:
+        return None
+    digitos = re.sub(r'\D', '', str(valor))
+    return digitos or None
+
+
+def _tempo_rastreio(inicio, fim):
+    """O que o `(fim_rastreio - inicio_rastreio)` do PostGIS fazia.
+
+    ARMADILHA que motiva esta funcao: no SQLite a subtracao de duas colunas de
+    texto nao da erro, da ZERO. O tempo de rastreio iria zerado para o BPC sem
+    ninguem notar. Medido em 2026-07-28.
+
+    Devolve HH:MM:SS, ou None quando falta uma das pontas.
+    """
+    if not inicio or not fim:
+        return None
+    for formato in ('%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%dT%H:%M:%SZ',
+                    '%Y-%m-%dT%H:%M:%S%z', '%Y-%m-%dT%H:%M:%S',
+                    '%Y-%m-%d %H:%M:%S'):
+        try:
+            i = datetime.strptime(str(inicio), formato)
+            f = datetime.strptime(str(fim), formato)
+        except ValueError:
+            continue
+        segundos = int((f - i).total_seconds())
+        sinal = '-' if segundos < 0 else ''
+        segundos = abs(segundos)
+        return '{}{:02d}:{:02d}:{:02d}'.format(
+            sinal, segundos // 3600, (segundos % 3600) // 60, segundos % 60
+        )
+    return None
+
+
+def exportar_para_bpc(missao, sql, destino):
+    """Escreve o GeoPackage que vai ao BPC. Devolve quantos pontos sairam.
+
+    Substitui a chamada ao `ogr2ogr` contra o PostGIS. Duas expressoes do SQL
+    antigo nao atravessam para o SQLite e foram para o Python: a limpeza do CPF
+    (nao ha regexp_replace) e o tempo de rastreio (a subtracao devolveria zero em
+    silencio). O resto do SELECT continua sendo SQL, para a lista de colunas e os
+    apelidos permanecerem os mesmos que o BPC ja espera.
+    """
+    from osgeo import ogr, osr
+
+    from ..utils.missao import conecta
+
+    destino = Path(destino)
+    if destino.exists():
+        destino.unlink()
+
+    con = conecta(missao)
+    con.row_factory = sqlite3.Row
+    linhas = con.execute(sql).fetchall()
+    con.close()
+
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(4674)
+    ds = ogr.GetDriverByName('GPKG').CreateDataSource(str(destino))
+    layer = ds.CreateLayer('pontos_exportados', srs, ogr.wkbPoint)
+
+    # As colunas de saida sao as do SELECT, menos as duas cruas que viram
+    # calculadas aqui, mais os dois campos derivados.
+    cruas = {'cpf_engenheiro_responsavel', 'inicio_rastreio', 'fim_rastreio', 'geom'}
+    colunas = [c for c in (linhas[0].keys() if linhas else []) if c not in cruas]
+    saida = colunas + ['cpf_responsavel', 'tempo_rastreio']
+    for nome in saida:
+        layer.CreateField(ogr.FieldDefn(nome, ogr.OFTString))
+
+    definicao = layer.GetLayerDefn()
+    for linha in linhas:
+        feat = ogr.Feature(definicao)
+        for nome in colunas:
+            valor = linha[nome]
+            if valor is not None:
+                feat.SetField(nome, str(valor))
+        cpf = _cpf_so_digitos(linha['cpf_engenheiro_responsavel'])
+        if cpf:
+            feat.SetField('cpf_responsavel', cpf)
+        tempo = _tempo_rastreio(linha['inicio_rastreio'], linha['fim_rastreio'])
+        if tempo:
+            feat.SetField('tempo_rastreio', tempo)
+        if linha['geom'] is not None:
+            from ..utils.missao import _wkb_de
+            feat.SetGeometry(ogr.CreateGeometryFromWkb(_wkb_de(linha['geom'])))
+        layer.CreateFeature(feat)
+    ds = None
+    return len(linhas)
 
 
 class LoadToBPC(QgsProcessingAlgorithm):
@@ -59,19 +157,10 @@ class LoadToBPC(QgsProcessingAlgorithm):
     OUTPUT = 'OUTPUT'
     FOLDERIN = 'FOLDERIN'
     FOLDEROUT = 'FOLDEROUT'
-    SERVERIP = 'SERVERIP'
-    PORT = 'PORT'
-    BDNAME = 'BDNAME'
-    USER = 'USER'
-    PASSWORD = 'PASSWORD'
+    MISSAO = 'MISSAO'
     TYPE = 'TYPE'
 
-    def initAlgorithm(self, config):
-        """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
-        """
-
+    def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.TYPE,
@@ -94,65 +183,23 @@ class LoadToBPC(QgsProcessingAlgorithm):
                 behavior=QgsProcessingParameterFile.Folder
             )
         )
-        
         self.addParameter(
-            QgsProcessingParameterString(
-                self.SERVERIP,
-                self.tr('Insira o IP do computador')
+            QgsProcessingParameterFile(
+                self.MISSAO,
+                self.tr('Arquivo da missão (GeoPackage), criado no P01'),
+                extension='gpkg'
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.PORT,
-                self.tr('Insira a porta')
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.BDNAME,
-                self.tr('Insira o nome do banco de dados'),
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.USER,
-                self.tr('Insira o usuário do PostgreSQL'),
-            )
-        )
-
-        password = QgsProcessingParameterString(
-            self.PASSWORD,
-            self.tr('Insira a senha do PostgreSQL'),
-        )
-        password.setMetadata({
-            'widget_wrapper':
-            'ferramentas_pto_controle.utils.wrapper.MyWidgetWrapper'})
-
-        self.addParameter(password)
 
     def processAlgorithm(self, parameters, context, feedback):
-        """
-        Here is where the processing itself takes place.
-        """
         process_type = self.parameterAsInt(parameters, self.TYPE, context)
         folder_in = self.parameterAsFile(parameters, self.FOLDERIN, context)
         folder_out = self.parameterAsFile(parameters, self.FOLDEROUT, context)
-        server_ip = self.parameterAsString(parameters, self.SERVERIP, context)
-        port = self.parameterAsInt(parameters, self.PORT, context)
-        bdname = self.parameterAsString(parameters, self.BDNAME, context)
-        user = self.parameterAsString(parameters, self.USER, context)
-        password = self.parameterAsString(parameters, self.PASSWORD, context)
+        missao = self.parameterAsFile(parameters, self.MISSAO, context)
 
         handle = HandleLoadToBPC(folder_in, folder_out, process_type)
         temp_folder = QgsProcessingUtils.tempFolder()
         where_clausule = handle.getWhereClausule(temp_folder, process_type)
-
-        db_string = "PG:dbname={} host={} port={} user={} password={}".format(
-            bdname, server_ip, port, user, password)
-    
 
         multilinestring = '''id,
   cod_ponto,
@@ -201,7 +248,7 @@ class LoadToBPC(QgsProcessingAlgorithm):
   projeto,
   engenheiro_responsavel as nome_responsavel,
   crea_engenheiro_responsavel as crea_responsavel,
-  NULLIF(regexp_replace(cpf_engenheiro_responsavel, '\D','','g'), '')::text as cpf_responsavel,
+  cpf_engenheiro_responsavel,
   geometria_aproximada,
   tipo_pto_ref_geod_topo,
   tipo_marco_limite,
@@ -216,7 +263,8 @@ class LoadToBPC(QgsProcessingAlgorithm):
   possui_arquivo_rastreio,
   4674 as EPSG,
   cod_ponto||'.zip' as anexos,
-  (fim_rastreio - inicio_rastreio) as tempo_rastreio,
+  inicio_rastreio,
+  fim_rastreio,
   geom
 '''
         clausule_validate_bpc = '''
@@ -241,14 +289,21 @@ class LoadToBPC(QgsProcessingAlgorithm):
   AND engenheiro_responsavel IS NOT NULL
 '''
         where_clausule = where_clausule + clausule_validate_bpc
-        sql_string = f"SELECT {multilinestring} FROM bpc.ponto_controle_p {where_clausule}"
+        sql_string = f"SELECT {multilinestring} FROM ponto_controle_p {where_clausule}"
 
         gpkg_path = Path(folder_out, 'pontos_exportados.gpkg')
+        exportados = exportar_para_bpc(missao, sql_string, gpkg_path)
+        feedback.pushInfo(f'Pontos exportados para o BPC: {exportados}')
 
-        subprocess.run(["ogr2ogr", "-f", "GPKG", f"{gpkg_path}", f"{db_string}", "-sql", f"{sql_string}", "-nln", "pontos_exportados"])
+        if exportados == 0:
+            feedback.reportError(
+                'Nenhum ponto passou nos critérios do BPC. Os mais comuns são '
+                'órbita diferente de FINAL, campo de domínio ainda em 9999 e '
+                'data de processamento em branco.'
+            )
 
         if process_type == 0:
-            return {self.OUTPUT: 'Processamento Concluído. Pontos não exportados para Geopackage podem ter apresentado inconsistências no metadado, consulte o banco para verificar as informações.'}
+            return {self.OUTPUT: 'Processamento Concluído. Pontos não exportados para Geopackage podem ter apresentado inconsistências no metadado, consulte a missão para verificar as informações.'}
         else:
             return {self.OUTPUT: 'Processamento Concluído'}
 
@@ -297,7 +352,8 @@ class LoadToBPC(QgsProcessingAlgorithm):
             - A pasta de entrada precisa de um CSV com a coluna cod_ponto, listando os pontos que vão ao BPC.
             - No ramo PPP, só entram os pontos com ÓRBITA FINAL. Ponto com órbita rápida fica de fora em silêncio, mesmo estando no CSV.
             - Ponto cujo código tenha BASE no meio (por exemplo RS-BASE-5) é descartado.
-            - Exige o ogr2ogr no PATH do sistema.
+            - Desde a troca do PostgreSQL pelo GeoPackage, a exportação é feita pelo próprio plugin. Não exige mais o ogr2ogr no PATH.
+            - Quer o pacote COMPLETO da missão, sem esses filtros? É o P17, que prepara para o Controle do Acervo.
             ''')
 
     def shortDescription(self):

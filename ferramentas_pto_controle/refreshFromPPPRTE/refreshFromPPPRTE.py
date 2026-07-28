@@ -55,17 +55,9 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
     OUTPUT = 'OUTPUT'
     TYPE = 'TYPE'
     FOLDER = 'FOLDER'
-    SERVERIP = 'SERVERIP'
-    PORT = 'PORT'
-    BDNAME = 'BDNAME'
-    USER = 'USER'
-    PASSWORD = 'PASSWORD'
+    MISSAO = 'MISSAO'
 
-    def initAlgorithm(self, config):
-        """
-        Here we define the inputs and output of the algorithm, along
-        with some other properties.
-        """
+    def initAlgorithm(self, config=None):
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.TYPE,
@@ -81,61 +73,27 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
-            QgsProcessingParameterString(
-                self.SERVERIP,
-                self.tr('Insira o IP do computador')
+            QgsProcessingParameterFile(
+                self.MISSAO,
+                self.tr('Arquivo da missão (GeoPackage), criado no P01'),
+                extension='gpkg'
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterNumber(
-                self.PORT,
-                self.tr('Insira a porta'),
-                defaultValue = 5432
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.BDNAME,
-                self.tr('Insira o nome do banco de dados'),
-            )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterString(
-                self.USER,
-                self.tr('Insira o usuário do PostgreSQL'),
-            )
-        )
-
-        password = QgsProcessingParameterString(
-            self.PASSWORD,
-            self.tr('Insira a senha do PostgreSQL'),
-        )
-        password.setMetadata({
-            'widget_wrapper':
-            'ferramentas_pto_controle.utils.wrapper.MyWidgetWrapper'})
-
-        self.addParameter(password)
 
     def processAlgorithm(self, parameters, context, feedback):
-        """
-        Here is where the processing itself takes place.
-        """
         process_type = self.parameterAsInt(parameters, self.TYPE, context)
         folder = self.parameterAsFile(parameters, self.FOLDER, context)
-        server_ip = self.parameterAsString(parameters, self.SERVERIP, context)
-        port = self.parameterAsInt(parameters, self.PORT, context)
-        bdname = self.parameterAsString(parameters, self.BDNAME, context)
-        user = self.parameterAsString(parameters, self.USER, context)
-        password = self.parameterAsString(parameters, self.PASSWORD, context)
+        missao = self.parameterAsFile(parameters, self.MISSAO, context)
+
         if process_type == 0:
-            refresh = HandleRefreshFromPPP(folder, server_ip, port, bdname, user, password)
+            refresh = HandleRefreshFromPPP(folder, missao)
             refresh.readPPP()
-        elif process_type == 1:
-            refresh = HandleRefreshFromCSV(folder, server_ip, port, bdname, user, password)
+        else:
+            refresh = HandleRefreshFromCSV(folder, missao)
             refresh.readCSV()
+
+        feedback.pushInfo(f'Pontos atualizados: {refresh.atualizados}')
+        feedback.pushInfo(f'Polígonos de controle recontados: {refresh.recontar()}')
 
         return {self.OUTPUT: 'Processamento Concluído'}
 
@@ -188,6 +146,10 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
             - No CSV do RTE, "norte" é o valor de 7 dígitos (a coordenada N) e "leste" é o de 6 dígitos (a coordenada E). Trocar as duas colunas grava coordenada errada sem nenhum aviso.
             - O meridiano central vai NEGATIVO no hemisfério oeste, por exemplo -51. É assim que o ramo PPP grava, e é o sinal que o cálculo do fuso espera.
             - O ramo RTE não preenche a coluna fuso, e não lê a coluna ponto_base.
+
+            Desde a troca do PostgreSQL pelo GeoPackage, esta rotina escreve no arquivo da missão criado no P01.
+            - Ponto processado que não existe na missão faz a rotina PARAR com o código do ponto na mensagem. Antes o UPDATE não achava a linha e seguia calado.
+            - A contagem de pontos por polígono de controle roda ao fim desta rotina.
             ''')
 
     def shortDescription(self):

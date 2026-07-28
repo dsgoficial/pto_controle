@@ -11,7 +11,6 @@ from .handleCheckNumber import HandleCheckNumber
 
 class CheckNumber(QgsProcessingAlgorithm):
     OUTPUT = 'OUTPUT'
-    SERVERIP = 'SERVERIP'
     FOLDEROUT = 'FOLDEROUT'
     LYR_PTO_CONTROLE_P = 'LYR_PTO_CONTROLE_P'
 

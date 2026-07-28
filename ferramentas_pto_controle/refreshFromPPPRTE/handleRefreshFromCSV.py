@@ -5,15 +5,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 import csv
-import psycopg2
-import csv
+
+from ..utils.missao import conecta, ponto_gpkg, recontar_controle_medicao
 
 class HandleRefreshFromCSV():
 
-    def __init__(self, path, host, port, db_name, user, password):
+    def __init__(self, path, missao):
         self.folder = Path(path)
-        self.conn = psycopg2.connect("host='{0}' port='{1}' dbname='{2}' user='{3}' password='{4}'".format(
-            host, port, db_name, user, password))
+        self.conn = conecta(missao)
+        self.atualizados = 0
         self.map_orbit = {
             'ULTRA-RÁPIDA': 2,
             'RÁPIDA': 3,
@@ -45,15 +45,39 @@ class HandleRefreshFromCSV():
                     self.updateDB(point)
 
     def updateDB(self, point):
-        with self.conn.cursor() as cursor:
-            cursor.execute(u'''
-            UPDATE bpc.ponto_controle_p
-            SET norte='{norte}', leste='{leste}', altitude_geometrica='{altitude_geometrica}', altitude_ortometrica='{altitude_ortometrica}',
-            latitude='{latitude}', longitude='{longitude}', geom=ST_GeomFromText('POINT({longitude} {latitude})', 4674), modelo_geoidal='{modelo_geoidal}',
-            data_processamento = '{data_processamento}', meridiano_central = '{meridiano_central}'
-            WHERE cod_ponto='{cod_ponto}'
-            '''.format(**point))
-            self.conn.commit()
+        """Grava o resultado do RTE no ponto, por parametro.
+
+        A coluna `fuso` NAO e preenchida aqui, ao contrario do ramo PPP, que a
+        deriva do meridiano central. E assimetria do plugin, nao do porte, e esta
+        registrada no help do algoritmo.
+        """
+        cursor = self.conn.execute(
+            'UPDATE ponto_controle_p SET norte = ?, leste = ?,'
+            ' altitude_geometrica = ?, altitude_ortometrica = ?,'
+            ' latitude = ?, longitude = ?, geom = ?, modelo_geoidal = ?,'
+            ' data_processamento = ?, meridiano_central = ?'
+            ' WHERE cod_ponto = ?',
+            (
+                point['norte'], point['leste'],
+                point['altitude_geometrica'], point['altitude_ortometrica'],
+                point['latitude'], point['longitude'],
+                ponto_gpkg(point['longitude'], point['latitude']),
+                point['modelo_geoidal'], point['data_processamento'],
+                point['meridiano_central'], point['cod_ponto'],
+            ),
+        )
+        if cursor.rowcount == 0:
+            raise ValueError(
+                f"o ponto {point['cod_ponto']} nao existe na missao. "
+                "Rode o P03 (atualizar banco) antes deste passo."
+            )
+        self.atualizados += 1
+        self.conn.commit()
+
+    def recontar(self):
+        tocados = recontar_controle_medicao(self.conn)
+        self.conn.commit()
+        return tocados
 
     @staticmethod
     def evaluateCoords(lat, lon):
