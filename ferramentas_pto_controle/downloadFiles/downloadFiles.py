@@ -176,18 +176,20 @@ class DownloadFiles(QgsProcessingAlgorithm):
         return "gerenciamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta realiza o download dos arquivos das feições selecionadas do banco de ponto de controle.
-        Os arquivos que o usuário poderá realizar o download são:
-        - Fotografias laterais
-        - Fotografia aérea
-        - Monografia
-        - Croqui
-        - RINEX''')
-        
+            P12. Baixa do banco os arquivos de um ponto, criando uma pasta por ponto. É o inverso do P11.
+
+            Antes: P11, com os caminhos já gravados nos atributos.
+
+            Atenção:
+            - A rotina só baixa os pontos SELECIONADOS na camada, no mapa do QGIS. Sem seleção não baixa nada e não reclama.
+            - Por depender de seleção no mapa, esta é a rotina menos útil em execução headless.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P12. Baixa do banco os arquivos de um ponto, criando uma pasta por ponto. É o inverso do P11.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

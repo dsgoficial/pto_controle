@@ -194,12 +194,21 @@ class FixDateTrimble(QgsProcessingAlgorithm):
         return "gerenciamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta corrige as datas dos arquivos RINEX de rastreadoras TRIMBLE que encerraram seu ciclo de ToW''')
-        
+            P13. Corrige a data dos arquivos RINEX da coletora TRIMBLE R5700, cujo relógio estourou as 1024 semanas do Time of Week em 2023 e voltou a marcar 2004.
+
+            Quando usar: depois de gerar o RINEX e ANTES do P02. As datas dentro do RINEX precisam bater com a data do metadado do medidor, senão a validação reprova.
+
+            Atenção:
+            - Não altera o arquivo bruto da coletora, só o RINEX já gerado.
+            - Escreve numa pasta de saída separada. Substituir o RINEX errado pelo corrigido dentro da estrutura de pastas é MANUAL.
+            - A TRIMBLE encerrou em 2024 o suporte de hardware que re-zerava o ToW.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P13. Corrige a data dos arquivos RINEX da coletora TRIMBLE R5700, cujo relógio estourou as 1024 semanas do Time of Week em 2023 e voltou a marcar 2004.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

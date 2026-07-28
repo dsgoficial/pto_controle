@@ -229,16 +229,29 @@ de escrever, o risco e baixo, mas nao e nulo.
 
 Nao existe P05: e o passo externo, no site do PPP-IBGE ou num software de RTE.
 
+## Onde mora o help
+
+O `qgis_process help --json` **nao expoe o `shortHelpString()`**, que e o help longo
+do painel do QGIS. Quem escreve so ali deixa o CLI mudo, e nao percebe, porque ve o
+texto na GUI. O canal que chega ao headless e o `shortDescription()`.
+
+| Onde | O que carrega | Quem ve |
+|---|---|---|
+| `shortDescription()` | uma linha: o passo e o que faz | painel do QGIS e `describe` |
+| `shortHelpString()` | help longo: pre-requisito, passo seguinte, armadilha | so o painel do QGIS |
+| `annotations.json` | regra de dominio e exemplo de invocacao | so o `describe` |
+
+Um teste de integracao reprova algoritmo sem `shortDescription()`.
+
 ## annotations.json
 
-Conhecimento de dominio curado, por id, opcional. Entra so o que a introspecao NAO
-alcanca: a ordem do fluxo, o que precisa ter rodado antes, e a armadilha que o
-contrato do parametro nao conta (por exemplo, que o `atualizarbanco` APAGA a pasta
-`3_Foto_Rastreio` original depois de recomprimir as fotos, ou que so se gera
-monografia com orbita PPP final).
+Conhecimento de dominio curado, por id, opcional. Entra so o que nem a introspecao
+nem o proprio plugin dizem: a regra de dominio e o exemplo de invocacao.
 
 Nome, tipo e obrigatoriedade de parametro **nao entram**, porque o `describe` ja le
-isso ao vivo e uma copia aqui apodreceria. Um teste faz isso valer.
+isso ao vivo e uma copia aqui apodreceria. Um teste faz isso valer. A `description`
+tambem saiu, quando o `shortDescription()` de cada algoritmo passou a dar esse texto
+ao vivo.
 
 ## Limites conhecidos
 

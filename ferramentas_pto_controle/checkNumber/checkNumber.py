@@ -55,9 +55,18 @@ class CheckNumber(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr('''
-        Esta ferramenta verifica quais são os números que constam como faltantes no banco fornecido. Por exemplo, suponha que existam os pontos 
-                       DF-HV-10, DF-HV-11 e DF-HV 13, a rotina irá retornar um .csv com os pontos DF-HV-1 até DF-HV-9 e o DF-HV-12.''')
-        
+            P14. Recebe a camada de pontos de controle e aponta os buracos na numeração, ou seja, os códigos disponíveis para uma próxima medição. Salva a lista em arquivo.
+
+            Exemplo: existindo DF-HV-10, DF-HV-11 e DF-HV-13, a rotina devolve de DF-HV-1 a DF-HV-9, mais o DF-HV-12.
+
+            Atenção: o código do ponto segue UF-HV-XXXX, com até 4 dígitos e SEM zero à esquerda.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P14. Recebe a camada de pontos de controle e aponta os buracos na numeração, ou seja, os códigos disponíveis para uma próxima medição. Salva a lista em arquivo.'
+        )
+
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
 

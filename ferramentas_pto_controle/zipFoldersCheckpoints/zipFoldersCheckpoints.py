@@ -180,13 +180,18 @@ class ZipFoldersCheckpoints(QgsProcessingAlgorithm):
         return "gerenciamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta compacta individualmente cada pasta de ponto de controle completamente e realiza o "resampling" 
-        das fotografias presentes no Croqui para ocupar menos espaço.
-        ''')
+            P16. Compacta individualmente a pasta de cada ponto de controle, para arquivamento em servidor, e reamostra as fotografias do croqui para ocupar menos espaço.
+
+            Quando usar: no fim do ciclo, com a estrutura completa e já carregada no BPC.
+
+            Atenção: a reamostragem do croqui é destrutiva no arquivo que vai para o zip. Guarde o original se ele ainda for necessário.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P16. Compacta individualmente a pasta de cada ponto de controle, para arquivamento em servidor, e reamostra as fotografias do croqui para ocupar menos espaço.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

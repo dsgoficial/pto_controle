@@ -131,6 +131,26 @@ def test_describe_devolve_contrato_de_verdade(tabela):
 
 
 @needs_qgis
+def test_todo_algoritmo_tem_descricao_viva(tabela):
+    """O `qgis_process help --json` NAO expoe o shortHelpString(), que e o help
+    longo do painel do QGIS. O unico canal de descricao que chega ao headless e o
+    shortDescription(). Sem ele o `describe` sai sem uma linha do que o algoritmo
+    faz, e ninguem percebe: o autor ve o texto na GUI e supoe que o CLI tambem ve.
+    """
+    sem_descricao = []
+    for nome in sorted(tabela):
+        data, code, _cached = cli.help_json_cached(f"{cli.PROVIDER}:{nome}")
+        if data is None:
+            pytest.skip(f"help de {nome} falhou (exit {code})")
+        if not (data.get("algorithm_details", {}).get("short_description") or "").strip():
+            sem_descricao.append(nome)
+    assert not sem_descricao, (
+        "sem shortDescription(): " + ", ".join(sem_descricao)
+        + ". O shortHelpString() nao supre: o qgis_process nao o expoe."
+    )
+
+
+@needs_qgis
 def test_resolucao_por_prefixo(tabela):
     if "criarbanco" not in tabela:
         pytest.skip("criarbanco nao esta na lista")

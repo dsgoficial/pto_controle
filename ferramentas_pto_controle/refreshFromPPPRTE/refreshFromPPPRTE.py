@@ -174,19 +174,26 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         return "posprocessamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta rotina atualiza o banco de dados com os dados do PPP ou RTE. 
-        Os parâmetros necessários para essa rotina são:
-        - Pasta com a estrutura de pontos de controle, devidamente validada.
-        - Parâmetros de conexão do banco:
-            -- IP da máquina (se trabalhando localmente utilizar localhost)
-            -- Porta (geralmente 5432 para PostgreSQL)
-            -- Nome do banco a ser atualizado 
-            -- Usuário do PostgreSQL
-            -- Senha do PostgreSQL''')
+            P07. Carrega no banco o resultado do processamento. É onde os ramos PPP e RTE convergem.
+
+            Antes: P06 (ramo PPP), ou o processamento_rte.csv preenchido (ramo RTE).
+            Depois: P08, distribuir as vistas aéreas.
+
+            Escolha da pasta:
+            - PPP: a pasta da estrutura de pontos, a mesma dos passos anteriores.
+            - RTE: a pasta que contém o CSV do processamento. A rotina lê TODO .csv que houver ali, menos os que têm LEIAME no nome.
+
+            Atenção:
+            - No CSV do RTE, "norte" é o valor de 7 dígitos (a coordenada N) e "leste" é o de 6 dígitos (a coordenada E). Trocar as duas colunas grava coordenada errada sem nenhum aviso.
+            - O meridiano central vai NEGATIVO no hemisfério oeste, por exemplo -51. É assim que o ramo PPP grava, e é o sinal que o cálculo do fuso espera.
+            - O ramo RTE não preenche a coluna fuso, e não lê a coluna ponto_base.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P07. Carrega no banco o resultado do processamento. É onde os ramos PPP e RTE convergem.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

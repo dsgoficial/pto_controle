@@ -164,17 +164,19 @@ class PathFilesInAttribute(QgsProcessingAlgorithm):
         return "gerenciamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta atualiza os atributos no banco de dados com o caminho dos seguintes arquivos:
-        - Fotografias laterais
-        - Fotografia aérea
-        - Monografia
-        - Croqui
-        - RINEX.''')
-        
+            P11. Grava nos atributos do banco o caminho dos arquivos de cada ponto: as quatro fotos laterais, a foto aérea, a monografia, o croqui e o RINEX.
+
+            Antes: a estrutura de pastas completa. Rodar com a estrutura pela metade grava caminho para arquivo que não existe.
+            Depois: habilita o P12, que baixa os arquivos por esses caminhos.
+
+            Atenção: o caminho gravado é o do momento da execução. Mover a estrutura de pastas depois disso quebra os links, e é preciso rodar de novo.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P11. Grava nos atributos do banco o caminho dos arquivos de cada ponto: as quatro fotos laterais, a foto aérea, a monografia, o croqui e o RINEX.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

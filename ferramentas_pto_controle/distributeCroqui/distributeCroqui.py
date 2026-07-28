@@ -135,8 +135,21 @@ class DistributeCroqui(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr('''
-        Esta ferramenta gera e distribui croquis dos pontos em estrutura de pastas.
-        ''')
+            P15. Gera o croqui digital por atlas de layout, sobre imagem de satélite, e distribui na pasta 4_Croqui de cada ponto.
+
+            Antes: a camada de pontos do croqui, digitalizada em campo sobre imagem de fundo. O gabarito com o estilo padrão é o arquivos/pontos_croqui.gpkg.
+
+            Atenção:
+            - A tabela de atributos precisa de cod_ponto, data_posicionamento e operador: é daí que o layout se preenche sozinho. A coluna observacao é opcional.
+            - O arquivo sai como <PONTO>_CROQUI_DIGITAL.jpg, ao lado do croqui manual, que é o <PONTO>_CROQUI. Um não substitui o outro.
+            - cod_ponto no padrão UF-HV-XXXX, sem zero à esquerda.
+            - A escala é parâmetro avançado, com padrão 500 (1:500).
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P15. Gera o croqui digital por atlas de layout, sobre imagem de satélite, e distribui na pasta 4_Croqui de cada ponto.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

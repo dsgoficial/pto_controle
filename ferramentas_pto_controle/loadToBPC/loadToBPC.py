@@ -287,12 +287,23 @@ class LoadToBPC(QgsProcessingAlgorithm):
         return "posprocessamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta gera os insumos necessários para carregamento no BPC: o arquivo GeoPackage e o(s) arquivo(s) zipados.
-        ''')
+            P10. Monta os insumos para subir ao Banco de Pontos de Controle da DSG: um .zip por ponto e o GeoPackage pontos_exportados.gpkg.
+
+            Antes: P09, monografias geradas.
+            Depois: o carregamento é MANUAL e fora do plugin. Suba os .zip por SFTP e depois carregue o .gpkg em "Adicionar Geopackage", na página web do BPC.
+
+            Atenção:
+            - A pasta de entrada precisa de um CSV com a coluna cod_ponto, listando os pontos que vão ao BPC.
+            - No ramo PPP, só entram os pontos com ÓRBITA FINAL. Ponto com órbita rápida fica de fora em silêncio, mesmo estando no CSV.
+            - Ponto cujo código tenha BASE no meio (por exemplo RS-BASE-5) é descartado.
+            - Exige o ogr2ogr no PATH do sistema.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P10. Monta os insumos para subir ao Banco de Pontos de Controle da DSG: um .zip por ponto e o GeoPackage pontos_exportados.gpkg.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

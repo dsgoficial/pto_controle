@@ -119,15 +119,19 @@ class AfterPPP(QgsProcessingAlgorithm):
         return "posprocessamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta descompacta os arquivos PPP no formato .zip e distribui os arquivos na estrutura padrão de pastas de ponto de controle.
-        Os parâmetros necessários são:
-        - Pasta com a estrutura de pontos de controle
-        - Pasta com os arquivos PPP no formato zip
-        ''')
+            P06. Descompacta na pasta de cada ponto os arquivos que o PPP do IBGE devolveu. Só existe no ramo PPP; quem processou por RTE vai do P04 direto ao P07.
+
+            Antes: P04, mais o processamento no site do IBGE já concluído.
+            Depois: P07, atualizar o banco com o resultado.
+
+            Atenção: na pasta dos arquivos baixados, a rotina só enxerga os que têm "_zipAllRinex.zip_" no nome, que é como o IBGE devolve o lote. Arquivo renomeado à mão passa despercebido.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P06. Descompacta na pasta de cada ponto os arquivos que o PPP do IBGE devolveu. Só existe no ramo PPP; quem processou por RTE vai do P04 direto ao P07.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

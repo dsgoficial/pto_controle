@@ -152,20 +152,23 @@ class CreateDatabase(QgsProcessingAlgorithm):
         return "preprocessamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta irá criar o banco de dados de pontos de controle necessário para a gerência do projeto.
-        Certifique-se que o usuário utilizado possui permissão para criar bancos.
-        Os parâmetros necessários são:
-        - IP da máquina que armazenará o banco (se trabalhando localmente utilizar localhost)
-        - Porta (geralmente 5432 para PostgreSQL)
-        - Nome do banco a ser gerado
-        - Usuário do PostgreSQL
-        - Senha do PostgreSQL
-        Caso já exista um banco de dados com o mesmo nome a ferramenta não irá sobrescrevê-lo.''')
-        
+            P01, primeiro passo do fluxo. Cria o banco PostGIS estruturado do ponto de controle, com os schemas de domínio e o bpc.
+
+            Antes: o PostgreSQL com PostGIS já instalado, e um usuário com permissão de criar banco.
+            Depois: P02, validar a estrutura de pastas.
+
+            Atenção:
+            - Banco com o mesmo nome NÃO é sobrescrito. A rotina não apaga nada.
+            - Use nome sem espaço e sem caractere especial.
+            - Pela linha de comando, exporte PTOCONTROLE_DB_PASSWORD em vez de passar a senha como parâmetro.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P01, primeiro passo do fluxo. Cria o banco PostGIS estruturado do ponto de controle, com os schemas de domínio e o bpc.'
+        )
+
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
 

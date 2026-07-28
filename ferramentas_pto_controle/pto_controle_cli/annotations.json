@@ -1,27 +1,26 @@
 {
   "_sobre": [
     "Conhecimento de dominio curado, por id de algoritmo. Opcional: o CLI funciona",
-    "sem este arquivo. Aqui entra SO o que a introspecao do qgis_process nao alcanca:",
-    "a ordem do fluxo, o que precisa ter rodado antes, e a armadilha que o contrato",
-    "do parametro nao conta. Nome, tipo e obrigatoriedade de parametro NAO entram,",
-    "porque isso o `describe` ja le ao vivo e uma copia aqui apodreceria.",
-    "Fonte: doc_dgeo/wiki_dgeo/docs/pto_controle (manual de uso) e o codigo do plugin.",
-    "Os 'example' sao os que ja tiveram os nomes de parametro conferidos no `describe`",
-    "ao vivo, em 2026-07-28. Algoritmo sem exemplo e algoritmo cujo contrato ainda nao",
-    "foi lido do plugin carregado: nao invente, rode `describe <id>` e copie de la."
+    "sem este arquivo. Aqui entra SO o que nem a introspecao nem o proprio plugin",
+    "dizem: a regra de dominio que nenhum campo do contrato carrega, e o exemplo",
+    "de invocacao.",
+    "NAO entra descricao: cada algoritmo tem shortDescription(), que o qgis_process",
+    "devolve e o `describe` exibe ao vivo. NAO entra nome nem tipo de parametro,",
+    "que o `describe` ja le do contrato. Copia apodrece.",
+    "O help LONGO (pre-requisito, passo seguinte, armadilha) vive no shortHelpString()",
+    "de cada algoritmo e aparece no painel do QGIS. O qgis_process nao o expoe.",
+    "Os 'example' tiveram os nomes de parametro conferidos no `describe` ao vivo,",
+    "em 2026-07-28. Algoritmo sem exemplo e algoritmo cujo contrato ainda nao foi",
+    "lido do plugin carregado: nao invente, rode `describe <id>` e copie de la."
   ],
-
   "ptocontrole:corrigirdatatrimble": {
-    "description": "P13. Corrige a data dos arquivos RINEX da coletora TRIMBLE R5700, cujo relogio estourou as 1024 semanas do Time of Week em 2023 e voltou a marcar 2004. Nao altera o arquivo bruto, so o RINEX ja gerado.",
     "constraints": [
       "Roda ANTES da validacao de estrutura (validarestrutura), nao depois: as datas do RINEX precisam bater com a data do metadado do medidor.",
       "A substituicao do RINEX errado pelo corrigido dentro da estrutura de pastas e MANUAL. O algoritmo escreve numa pasta de saida separada.",
       "A TRIMBLE encerrou em 2024 o suporte de hardware que re-zerava o ToW."
     ]
   },
-
   "ptocontrole:criarbanco": {
-    "description": "P01. Cria o banco PostGIS estruturado do ponto de controle. Primeiro passo do fluxo.",
     "constraints": [
       "Exige PostgreSQL com PostGIS ja instalado.",
       "Se ja existir banco com o mesmo nome, a rotina NAO sobrescreve.",
@@ -35,9 +34,7 @@
       "USER": "postgres"
     }
   },
-
   "ptocontrole:validarestrutura": {
-    "description": "P02. Acha inconsistencia na pasta do dia de medicao: arquivo faltando, metadado mal preenchido, foto ausente, tempo de medicao abaixo do minimo. E o portao do fluxo, e quem entrega a pasta validada e o medidor.",
     "constraints": [
       "A pasta a escolher e a de um nivel ACIMA das pastas 'medidor_AAAA-MM-DD' (a 'pasta_3' do manual), nunca a do medidor.",
       "A pasta do medidor usa underscore antes do nome e hifen na data: 'joao_2022-05-06'. Trocar um pelo outro quebra a varredura.",
@@ -61,9 +58,7 @@
       "FILE_DST": "D:\\pontos\\relatorio.txt"
     }
   },
-
   "ptocontrole:atualizarbanco": {
-    "description": "P03. Varre as subpastas, le os RINEX de medicao e carrega o banco. Ainda com dado NAO processado, antes de PPP ou RTE.",
     "constraints": [
       "Exige a validacao de estrutura (validarestrutura) retornando zero erros.",
       "Usa a mesma pasta e o mesmo JSON da validacao de estrutura.",
@@ -72,33 +67,25 @@
       "Conferir o objeto 'default' do JSON antes de rodar: e ele que preenche o que o CSV do medidor nao traz."
     ]
   },
-
   "ptocontrole:prepararprocessamento": {
-    "description": "P04. Organiza os arquivos para o processamento externo. Cria a pasta 6_Processamento dentro de cada ponto, zipa os RINEX de 2_RINEX e monta um zipAllRinex.zip na pasta de saida.",
     "constraints": [
       "Depois deste passo o fluxo SAI do QGIS: o P05 e externo, no site do PPP-IBGE ou num software de RTE.",
       "Nao existe algoritmo P05 no plugin, e por isso a numeracao pula do 04 para o 06."
     ]
   },
-
   "ptocontrole:posppp": {
-    "description": "P06. Descompacta na pasta de cada ponto os arquivos que o PPP-IBGE devolveu. So existe no ramo PPP; o ramo RTE vai direto do P04 para o P07.",
     "constraints": [
       "Recebe duas pastas: a estrutura de pontos ('pasta_3') e a pasta onde ficou o arquivo baixado do IBGE."
     ]
   },
-
   "ptocontrole:atualizarbancoppprte": {
-    "description": "P07. Carrega no banco o resultado do processamento, vindo do PPP ou do RTE. E onde os dois ramos do fluxo convergem.",
     "constraints": [
       "No modo PPP a pasta e a estrutura de pontos ('pasta_3').",
       "No modo RTE a pasta e a que contem o processamento_rte.csv, e ela deve ter esse arquivo SOZINHO.",
       "Exige os arquivos PPP ja processados pelo IBGE, ou o CSV do RTE preenchido no modelo de arquivos/processamento_rte.csv."
     ]
   },
-
   "ptocontrole:distribuirvistas": {
-    "description": "P08. Gera pelo compositor de impressao tres vistas aereas por ponto (local, municipal, estadual) e distribui na estrutura de pastas, para a monografia.",
     "constraints": [
       "Exige QGIS 3.34 ou superior.",
       "A camada de pontos vem do banco (PostGIS, tipicamente ponto_controle_p) e precisa da coluna cod_ponto preenchida.",
@@ -106,9 +93,7 @@
       "As tres escalas sao parametros avancados e tem valor padrao."
     ]
   },
-
   "ptocontrole:distribuirmonografia": {
-    "description": "P09. Gera o PDF da monografia de cada ponto a partir do banco e da estrutura de pastas, e grava em 8_Monografia. Usa layout QPT do proprio plugin, sem LibreOffice.",
     "constraints": [
       "No PPP, so gere monografia com orbita FINAL. Orbita rapida e ultra-rapida nao valem. A final sai entre 11 e 20 dias depois da medicao, conforme o fornecedor (NRCan ou IGS).",
       "A orientacao do modelo (paisagem ou retrato) segue a orientacao em que o medidor tirou as fotos do ponto.",
@@ -116,9 +101,7 @@
       "O branch 'monograpy' saiu do GitHub em 2026-07-28. O historico dele esta no main."
     ]
   },
-
   "ptocontrole:prepararbpc": {
-    "description": "P10. Monta os insumos para subir ao Banco de Pontos de Controle da DSG: os .zip por ponto e um .gpkg.",
     "constraints": [
       "A pasta de entrada precisa de um CSV com a coluna cod_ponto, listando os pontos que vao ao BPC.",
       "Chama o ogr2ogr por subprocesso: ele tem de estar no PATH.",
@@ -126,32 +109,24 @@
       "Cada Centro de Geoinformacao tem credencial propria do SFTP."
     ]
   },
-
   "ptocontrole:caminhosnosatributos": {
-    "description": "P11. Grava nos atributos do banco o caminho dos arquivos de cada ponto: as quatro fotos laterais, a foto aerea, a monografia, o croqui e o RINEX.",
     "constraints": [
       "Roda depois de a estrutura de pastas estar completa, senao grava caminho para arquivo que nao existe.",
       "E o passo que habilita o baixararquivos (P12), que le esses caminhos."
     ]
   },
-
   "ptocontrole:baixararquivos": {
-    "description": "P12. Baixa do banco os arquivos de um ponto, criando uma pasta por ponto. Inverso do caminhosnosatributos.",
     "constraints": [
       "So baixa os pontos SELECIONADOS na camada no canvas do QGIS. Sem selecao, nao baixa nada.",
       "Essa dependencia de selecao interativa e o motivo de este algoritmo ser o de uso mais duvidoso headless."
     ]
   },
-
   "ptocontrole:verificarcodigos": {
-    "description": "P14. Recebe a camada de pontos de controle e aponta os buracos na numeracao (codigo disponivel). Salva a lista num arquivo de texto.",
     "constraints": [
       "O codigo do ponto segue UF-HV-XXXX, com XXXX de ate 4 digitos e SEM zero a esquerda."
     ]
   },
-
   "ptocontrole:distribuircroqui": {
-    "description": "P15. Gera o croqui digital por atlas de layout e distribui na pasta 4_Croqui de cada ponto.",
     "constraints": [
       "Parte da camada de pontos do croqui (arquivos/pontos_croqui.gpkg), que ja traz o estilo padrao. O ponto se digitaliza sobre imagem de fundo.",
       "A tabela de atributos precisa de cod_ponto, data_posicionamento e operador: e dai que o layout se preenche sozinho. 'observacao' e opcional.",
@@ -161,9 +136,7 @@
       "Havendo croqui digital, ele tem prioridade sobre o croqui manual."
     ]
   },
-
   "ptocontrole:compactarpastas": {
-    "description": "P16. Compacta as pastas dos pontos de controle para arquivamento em servidor.",
     "constraints": [
       "A pagina compactar_pto_controle.md do manual descreve, por engano de copia, o objetivo do P14 (buraco na numeracao). Vale o codigo, nao aquela pagina."
     ]

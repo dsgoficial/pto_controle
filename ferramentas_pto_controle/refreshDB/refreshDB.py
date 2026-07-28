@@ -174,19 +174,22 @@ class RefreshDB(QgsProcessingAlgorithm):
         return "preprocessamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta atualizará o banco de dados de pontos de controle.
-        Utilizando como referência uma pasta validada na etapa anterior, serão inseridos no banco os dados prévios dos pontos de controle localizados dentro da pasta.
-        Os parâmetros necessários são:
-        - Pasta com a estrutura de pontos de controle (já validada)
-        - Porta (geralmente 5432 para PostgreSQL)
-        - Nome do banco criado para armazenar os pontos de controle
-        - Usuário do PostgreSQL
-        - Senha do PostgreSQL
-        ''')
+            P03. Varre as subpastas, lê os RINEX de medição e carrega o banco. Ainda com dado NÃO processado, antes do PPP ou do RTE.
+
+            Antes: P02 retornando zero erro. Use a mesma pasta e o mesmo JSON.
+            Depois: P04, preparar para processamento.
+
+            Atenção:
+            - Esta rotina APAGA a pasta 3_Foto_Rastreio original. Ela recomprime as fotos para jpeg numa pasta nova e substitui a antiga. Exige a biblioteca Pillow no Python do QGIS.
+            - Grava tipo_situacao_id como "Aguardando Revisão".
+            - Confira o objeto "default" do JSON antes de rodar: é ele que preenche o que o CSV do medidor não traz.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P03. Varre as subpastas, lê os RINEX de medição e carrega o banco. Ainda com dado NÃO processado, antes do PPP ou do RTE.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

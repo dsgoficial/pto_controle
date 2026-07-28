@@ -122,17 +122,21 @@ class BeforePPP(QgsProcessingAlgorithm):
         return "preprocessamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta cria a pasta 6_Processamento na estrutura de pastas e compacta os arquivos RINEX no formato zip dentro da pasta 2_RINEX.
-        Além disso, compacta todos os arquivos a serem processados em um único arquivo .zip em uma pasta escolhida para ser processado manualmente no PPP-IBGE.
-        Para o correto funcionamento desta ferramenta é as pastas devem estar devidamente validadas.
-        Os parâmetros necessários são:
-        - Pasta com a estrutura de pontos de controle
-        - Pasta para salvar o .zip conjunto para processamento no PPP-IBGE
-        ''')
+            P04. Organiza os arquivos para o processamento externo. Cria a pasta 6_Processamento em cada ponto, compacta os RINEX de 2_RINEX e monta um zipAllRinex.zip único na pasta de saída.
+
+            Antes: P03, banco atualizado.
+            Depois: o fluxo SAI do QGIS. Escolha o ramo:
+            - PPP: envie o zipAllRinex.zip ao serviço do IBGE, depois volte no P06.
+            - RTE: processe no software de sua escolha e preencha o processamento_rte.csv, depois volte direto no P07.
+
+            Atenção: não existe algoritmo P05 no plugin, e é por isso que a numeração pula do 04 para o 06.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P04. Organiza os arquivos para o processamento externo. Cria a pasta 6_Processamento em cada ponto, compacta os RINEX de 2_RINEX e monta um zipAllRinex.zip único na pasta de saída.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

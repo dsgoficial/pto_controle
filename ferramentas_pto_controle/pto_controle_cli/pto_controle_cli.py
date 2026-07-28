@@ -263,6 +263,7 @@ def _summarize_help(data):
     return {
         "id": details.get("id"),
         "display_name": details.get("name"),
+        "short_description": details.get("short_description"),
         "group": details.get("group"),
         "parameters": params,
         "outputs": outputs,
@@ -621,6 +622,12 @@ def render_describe(help_data, annotation):
     alg = details.get("id") or "?"
     out = [f"{alg}  |  {details.get('name', '')}  |  grupo: {details.get('group', '')}"]
 
+    # A descricao VIVA, que sai do shortDescription() do proprio algoritmo. Ela vem
+    # antes da prosa curada porque e a que acompanha o plugin sozinha. Atencao: o
+    # `qgis_process help --json` NAO expoe o shortHelpString(), que e o help longo
+    # do painel do QGIS, entao o unico canal vivo de descricao e este.
+    if details.get("short_description"):
+        out += ["", textwrap.fill(details["short_description"], width=WIDTH)]
     if annotation.get("description"):
         out += ["", textwrap.fill(annotation["description"], width=WIDTH)]
 

@@ -190,20 +190,28 @@ class ValidatePoints(QgsProcessingAlgorithm):
         return "preprocessamento"
 
     def shortHelpString(self):
-        """
-        Retruns a short helper string for the algorithm
-        """
         return self.tr('''
-        Esta ferramenta checará a consistência dos arquivos gerados pela medição e sua correta disposição nas pastas.
-        Para o correto funcionamento da validação é indispensável que as pastas sigam o modelo padrão.
-        Os parâmetros necessários são:
-        - Pasta com a estrutura de pontos de controle
-        - Nome dos medidores separados por ; (não inserir espaços)
-        - Data (no formato YYYY-MM-DD. Exemplo: 2019-08-30)
-        - Fuso horário da região (geralmente -3)
-        - JSON com parâmetros de validação (pasta arquivos, com modelo de .json a ser utilizado)
-        - O arquivo no qual será escrito os problemas de validação
-        ''')
+            P02, o portão do fluxo. Acha inconsistência na pasta do dia: arquivo faltando, metadado mal preenchido, foto ausente e tempo de medição abaixo do mínimo. Só se segue adiante com zero erro.
+
+            Antes: a pasta entregue pelo medidor, e o JSON de parâmetros preenchido pelo gerente.
+            Depois: P03, atualizar o banco.
+
+            Estrutura que ele cobra:
+            - A pasta escolhida é a de UM NÍVEL ACIMA das pastas do dia. As pastas do dia se chamam exatamente medidor_AAAA-MM-DD (underscore antes do nome, hífen na data).
+            - Cada ponto precisa das subpastas 1_Formato_Nativo, 2_RINEX, 3_Foto_Rastreio e 4_Croqui. A 5_Foto_Auxiliar é opcional.
+            - As pastas 6_Processamento, 7_Imagens_Monografia e 8_Monografia só passam com "Ignorar as pastas e arquivos de processamento" ligado.
+            - Foto de rastreio: <PONTO>_<azimute>_FOTO.jpg, com azimute de 000 a 360.
+
+            Atenção:
+            - O JSON precisa do objeto "validacao" (alt_max_ant e dur_min). Sem ele a rotina não roda.
+            - O objeto "default" do JSON é opcional, mas quando a mesma chave aparece no JSON e no CSV do medidor, o CSV VENCE.
+            - O CSV só deve trazer as 13 colunas obrigatórias. Coluna a mais, mesmo válida no banco, vira aviso: fixe o valor no "default" do JSON.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P02, o portão do fluxo. Acha inconsistência na pasta do dia: arquivo faltando, metadado mal preenchido, foto ausente e tempo de medição abaixo do mínimo. Só se segue adiante com zero erro.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

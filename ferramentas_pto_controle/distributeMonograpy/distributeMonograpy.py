@@ -126,6 +126,23 @@ class DistributeMonografia(QgsProcessingAlgorithm):
     def displayName(self): return self.tr('09 - Gerar e distribuir monografias nas pastas')
     def group(self): return self.tr("Pós-processamento")
     def groupId(self): return "posprocessamento"
-    def shortHelpString(self): return "Gera PDFs simples com informações dos pontos, sem usar ODT."
+    def shortHelpString(self):
+        return self.tr('''
+            P09. Gera o PDF da monografia de cada ponto, a partir do banco e da estrutura de pastas, e grava em 8_Monografia. Usa modelo QPT do próprio plugin, sem LibreOffice.
+
+            Antes: P08, vistas aéreas distribuídas.
+            Depois: P10, preparar os insumos do BPC.
+
+            Atenção:
+            - No ramo PPP, só gere monografia com órbita FINAL. Órbita rápida e ultra-rápida não valem. A final sai entre 11 e 20 dias depois da medição, conforme o fornecedor.
+            - A orientação do modelo (paisagem ou retrato) segue a orientação em que o medidor tirou as fotos do ponto.
+            - Havendo croqui digital, ele tem prioridade sobre o croqui manual.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P09. Gera o PDF da monografia de cada ponto, a partir do banco e da estrutura de pastas, e grava em 8_Monografia. Usa modelo QPT do próprio plugin, sem LibreOffice.'
+        )
+
     def tr(self, s): return QCoreApplication.translate('Processing', s)
     def createInstance(self): return DistributeMonografia()

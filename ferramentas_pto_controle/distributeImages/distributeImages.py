@@ -245,8 +245,22 @@ class DistributeImages(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr('''
-        Esta ferramenta gera e distribui as imagens aéreas dos pontos em estrutura de pastas.
-        ''')
+            P08. Gera pelo compositor de impressão três vistas de cada ponto (local por imagem de satélite, municipal e estadual) e distribui na pasta 7_Imagens_Monografia.
+
+            Antes: P07, com a camada de pontos carregada do banco.
+            Depois: P09, gerar a monografia.
+
+            Atenção:
+            - A camada de pontos precisa da coluna cod_ponto preenchida.
+            - A rotina aplica os PRÓPRIOS estilos, que vêm dentro do plugin. Não é preciso carregar qml_estado.qml nem qml_municipio.qml na mão: o que estiver na camada será substituído.
+            - Use as malhas municipal e estadual do IBGE, para padronizar.
+            - As três escalas são parâmetros avançados e já têm valor padrão.
+            ''')
+
+    def shortDescription(self):
+        return self.tr(
+            'P08. Gera pelo compositor de impressão três vistas de cada ponto (local por imagem de satélite, municipal e estadual) e distribui na pasta 7_Imagens_Monografia.'
+        )
 
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)

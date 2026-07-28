@@ -136,10 +136,12 @@ class EvaluateStructure():
         subpastas = [f for f in listdir(pasta) if isdir(join(pasta, f))]
 
         if self.ignora_processamento:
-            if "6_Processamento" in subpastas:
-                subpastas.remove("6_Processamento")
-            if "7_Imagens_Monografia" in subpastas:
-                subpastas.remove("7_Imagens_Monografia")
+            # As tres sao criadas pelas proprias rotinas do plugin (P04, P08 e P09).
+            # Sem a 8_Monografia nesta lista, revalidar uma pasta ja processada
+            # acusava "nao esta prevista para estar na estrutura" em todo ponto.
+            for gerada in ("6_Processamento", "7_Imagens_Monografia", "8_Monografia"):
+                if gerada in subpastas:
+                    subpastas.remove(gerada)
 
         pastas_incorretas = set(subpastas).difference(
             ["1_Formato_Nativo", "2_RINEX", "3_Foto_Rastreio", "4_Croqui", "5_Foto_Auxiliar"])
