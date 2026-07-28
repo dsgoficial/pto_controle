@@ -93,7 +93,7 @@ class PontoControleProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg "qgis" or
         "gdal". This string should not be localised.
         """
-        return 'provider'
+        return 'ptocontrole'
 
     def name(self):
         """

@@ -137,14 +137,14 @@ class PathFilesInAttribute(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '11 - Inserir nos atributos os caminhos dos arquivos'
+        return 'caminhosnosatributos'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr('11 - Inserir nos atributos os caminhos dos arquivos')
 
     def group(self):
         """

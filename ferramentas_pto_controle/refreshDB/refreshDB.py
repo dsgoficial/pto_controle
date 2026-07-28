@@ -147,14 +147,14 @@ class RefreshDB(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '03 - Atualizar banco de dados'
+        return 'atualizarbanco'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr('03 - Atualizar banco de dados')
 
     def group(self):
         """

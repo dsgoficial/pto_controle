@@ -260,14 +260,14 @@ class LoadToBPC(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '10 - Preparar insumos para carregamento no BPC'
+        return 'prepararbpc'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr('10 - Preparar insumos para carregamento no BPC')
 
     def group(self):
         """

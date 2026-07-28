@@ -42,10 +42,10 @@ class CheckNumber(QgsProcessingAlgorithm):
         return {self.OUTPUT: 'Processamento Concluído'}
 
     def name(self):
-        return '14 - Verificar códigos de pontos disponíveis'
+        return 'verificarcodigos'
 
     def displayName(self):
-        return self.tr(self.name())
+        return self.tr('14 - Verificar códigos de pontos disponíveis')
 
     def group(self):
         return self.tr("Gerenciar Pontos")

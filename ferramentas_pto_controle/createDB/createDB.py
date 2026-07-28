@@ -125,14 +125,14 @@ class CreateDatabase(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '01 - Criar banco de dados'
+        return 'criarbanco'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr('01 - Criar banco de dados')
 
     def group(self):
         """

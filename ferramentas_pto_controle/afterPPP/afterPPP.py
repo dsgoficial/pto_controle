@@ -92,14 +92,14 @@ class AfterPPP(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '06 - Procedimento pós PPP'
+        return 'posppp'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr('06 - Procedimento pós PPP')
 
     def group(self):
         """

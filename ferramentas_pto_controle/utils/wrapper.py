@@ -13,7 +13,9 @@ class MyWidgetWrapper(WidgetWrapper):
 
     def createWidget(self):
         self._lineedit = QLineEdit()
-        self._lineedit.setEchoMode(QLineEdit.Password)
+        # Qt6 exige o enum ESCOPADO. O `QLineEdit.Password` de Qt5 nao existe mais e
+        # levanta AttributeError ao abrir a janela de qualquer algoritmo com senha.
+        self._lineedit.setEchoMode(QLineEdit.EchoMode.Password)
         # if self.placeholder:
         #     self._lineedit.setPlaceholderText(self.placeholder)
         return self._lineedit

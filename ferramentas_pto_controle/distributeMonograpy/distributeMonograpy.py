@@ -122,8 +122,8 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         feedback.pushInfo(f"{sucesso}/{total} PDFs gerados com sucesso.")
         return {'total_gerado': sucesso}
 
-    def name(self): return '09 - Gerar e distribuir monografias nas pastas'
-    def displayName(self): return self.tr(self.name())
+    def name(self): return 'distribuirmonografia'
+    def displayName(self): return self.tr('09 - Gerar e distribuir monografias nas pastas')
     def group(self): return self.tr("Pós-processamento")
     def groupId(self): return "posprocessamento"
     def shortHelpString(self): return "Gera PDFs simples com informações dos pontos, sem usar ODT."

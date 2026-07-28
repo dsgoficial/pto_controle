@@ -232,10 +232,10 @@ class DistributeImages(QgsProcessingAlgorithm):
 
 
     def name(self):
-        return '08 - Distribuir vistas aéreas na estrutura de pasta'
+        return 'distribuirvistas'
 
     def displayName(self):
-        return self.tr(self.name())
+        return self.tr('08 - Distribuir vistas aéreas na estrutura de pasta')
 
     def group(self):
         return self.tr("Pós-processamento")

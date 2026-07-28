@@ -163,14 +163,14 @@ class ValidatePoints(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '02 - Validar a estrutura de pastas'
+        return 'validarestrutura'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr('02 - Validar a estrutura de pastas')
 
     def group(self):
         """

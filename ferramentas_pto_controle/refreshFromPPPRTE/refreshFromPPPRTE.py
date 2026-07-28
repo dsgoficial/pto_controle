@@ -147,14 +147,14 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return '07 - Atualizar banco com dados do PPP/RTE'
+        return 'atualizarbancoppprte'
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr(self.name())
+        return self.tr('07 - Atualizar banco com dados do PPP/RTE')
 
     def group(self):
         """
