@@ -1,4 +1,4 @@
-# pto-controle-cli
+﻿# pto-controle-cli
 
 Executa os algoritmos de Processing do plugin **Ponto de Controle** por linha de
 comando, headless, sem abrir o QGIS Desktop. E uma camada fina sobre o
@@ -103,26 +103,20 @@ Depois de ler o contrato, o CLI converte a string para booleano JSON nos paramet
 declarados `boolean`, aceita `true/false`, `1/0`, `sim/nao`, `yes/no`, e REPROVA o que
 nao souber ler, em vez de chutar um valor.
 
-## Senha do PostgreSQL
+## Nao ha segredo neste CLI
 
-Seis dos quinze algoritmos falam com o banco e recebem a senha como parametro comum.
-Na caixa de ferramentas do QGIS isso vira um campo mascarado. Na linha de comando
-viraria historico do shell e linha de processo visivel a outros usuarios da maquina.
+Enquanto o plugin usava PostgreSQL, seis algoritmos recebiam a senha como
+parametro comum, e o CLI tinha um guardrail para ela: leitura do ambiente,
+mascara na saida e aviso quando o valor vinha na linha de comando.
 
-**Deixe a senha fora da linha de comando.** O CLI le a variavel de ambiente
-`PTOCONTROLE_DB_PASSWORD` quando o parametro de senha nao foi informado:
+Desde 2026-07-28 a missao e um arquivo GeoPackage e **nenhum algoritmo recebe
+credencial**. O guardrail foi REMOVIDO junto com o PostgreSQL, em vez de ficar
+como codigo morto protegendo o que nao existe.
 
-```
-set PTOCONTROLE_DB_PASSWORD=...
-python pto_controle_cli.py run criarbanco SERVERIP=localhost PORT=5432 BDNAME=bpc USER=postgres
-```
-
-Quando a senha vem na linha de comando mesmo assim, o CLI avisa. Em toda saida
-(dry-run, eco de parametros, mensagem de erro) o valor sai como `***`. O `describe`
-marca esses parametros como `segredo`.
-
-Isto e guardrail da interface, nao do plugin: o plugin continua recebendo a senha
-como parametro, e quem usa a GUI nao ve diferenca.
+O que ficou no lugar dele e um teste: `test_nenhum_algoritmo_pede_segredo` varre
+o contrato vivo dos algoritmos e reprova se aparecer parametro com cara de senha
+ou token. Se isso acontecer, alguem reintroduziu credencial na linha de comando, e
+o guardrail precisa voltar junto. O alarme custa uma regex, e nao um modulo.
 
 ## Validacao antes de executar
 
@@ -180,7 +174,7 @@ pytest ferramentas_pto_controle/pto_controle_cli/tests -v
 
 Tres grupos:
 
-- **`test_cli_contract.py`**: validacao, coercao, cache, segredo e renderizacao. Nao
+- **`test_cli_contract.py`**: validacao, coercao, cache e renderizacao. Nao
   precisa de QGIS: o contrato entra como fixture. A validacao existe para poupar a
   chamada cara, entao testa-la nao pode custar essa chamada.
 - **`test_ids_do_plugin.py`**: guarda dos ids, lida do fonte do plugin por `ast`, sem

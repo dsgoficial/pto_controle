@@ -231,53 +231,6 @@ def test_coercao_nao_toca_o_que_nao_e_booleano():
 
 
 # --------------------------------------------------------------------------
-# Segredo
-#
-# Seis algoritmos recebem a senha do PostgreSQL como parametro comum. Estes testes
-# amarram as duas garantias: a senha pode entrar pelo ambiente, e nunca sai por
-# extenso em nenhuma saida.
-# --------------------------------------------------------------------------
-def test_mask_esconde_o_que_e_segredo():
-    assert cli.mask("PASSWORD", "hunter2") == "***"
-    assert cli.mask("senha_do_banco", "hunter2") == "***"
-    assert cli.mask("USER", "postgres") == "postgres"
-    # Vazio nao vira '***': mascarar ausencia esconderia o obrigatorio faltando.
-    assert cli.mask("PASSWORD", "") == ""
-
-
-def test_senha_entra_pelo_ambiente(monkeypatch):
-    monkeypatch.setenv(cli.ENV_SENHA, "hunter2")
-    inputs = {"SERVERIP": "localhost", "BDNAME": "bpc", "USER": "postgres"}
-    cli.preencher_segredo(inputs, HELP)
-    assert inputs["PASSWORD"] == "hunter2"
-    # E, preenchida assim, a validacao passa a aprovar.
-    assert cli.validate_inputs({**inputs, "PORT": 5432}, HELP) == []
-
-
-def test_senha_na_linha_de_comando_gera_aviso(monkeypatch):
-    monkeypatch.delenv(cli.ENV_SENHA, raising=False)
-    inputs = {"PASSWORD": "hunter2"}
-    avisos = cli.preencher_segredo(inputs, HELP)
-    assert any("historico do shell" in a for a in avisos)
-    # O aviso nao pode conter o proprio segredo.
-    assert all("hunter2" not in a for a in avisos)
-
-
-def test_dry_run_nao_imprime_a_senha():
-    inputs = {"SERVERIP": "localhost", "PORT": 5432, "BDNAME": "bpc",
-              "USER": "postgres", "PASSWORD": "hunter2"}
-    saida = cli.render_dry_run("ptocontrole:criarbanco", inputs, HELP)
-    assert "hunter2" not in saida
-    assert "***" in saida
-
-
-def test_describe_marca_o_parametro_de_segredo():
-    linha = cli.format_param("PASSWORD", HELP["parameters"]["PASSWORD"])
-    assert "segredo" in linha
-    assert cli.ENV_SENHA in linha
-
-
-# --------------------------------------------------------------------------
 # Cache
 # --------------------------------------------------------------------------
 def test_cache_ida_e_volta(tmp_path, monkeypatch):

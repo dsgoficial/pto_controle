@@ -29,15 +29,6 @@ chamada ao qgis_process, que custa segundos, entao fica em cache em disco,
 invalidado pela impressao digital do ambiente (ver `cache`). Escapes: `--no-check`
 pula a validacao e `--refresh-cache` forca reler o contrato ao vivo.
 
-Segredo (DORMENTE desde a troca do PostgreSQL pelo GeoPackage)
--------
-Enquanto o plugin usava PostgreSQL, seis algoritmos recebiam a senha como
-parametro comum, e o CLI ganhou um guardrail para ela. Desde 2026-07-28 a missao e
-um arquivo GeoPackage e NENHUM algoritmo declara segredo, entao o guardrail nao
-dispara mais. Ele fica no codigo como rede: se algum dia um parametro de senha ou
-token voltar, o CLI le PTOCONTROLE_DB_PASSWORD do ambiente, avisa quando o valor
-vier na linha de comando, e mascara em toda saida.
-
 Exemplos
 --------
   python pto_controle_cli.py doctor --fix
@@ -78,11 +69,6 @@ PLUGIN_DIR = HERE.parent
 # sem precisar limpar o cache na mao.
 CACHE_FORMAT = 1
 WIDTH = 92
-
-# Parametros cujo VALOR e segredo: nunca sao ecoados por extenso e podem vir do
-# ambiente em vez da linha de comando.
-RE_SEGREDO = re.compile(r"senha|password|passwd|secret|token", re.IGNORECASE)
-ENV_SENHA = "PTOCONTROLE_DB_PASSWORD"
 
 _qgis_process_path = None  # cache (apenas resultados positivos)
 _fingerprint = None  # cache em memoria (o stat e barato, mas o run chama varias vezes)
@@ -249,7 +235,6 @@ def _summarize_help(data):
             "advanced": p.get("is_advanced", False),
             "is_output": p.get("is_destination", False),
             "default": p.get("default_value"),
-            "secret": bool(RE_SEGREDO.search(name)),
         }
         if "available_options" in p:
             item["options"] = p["available_options"]
@@ -452,14 +437,12 @@ def _param_type(param):
     )
 
 
-def _param_marks(param, nome=""):
+def _param_marks(param):
     marks = ["opcional" if param.get("optional", False) else "obrigatorio"]
     if param.get("is_destination"):
         marks.append("saida")
     if param.get("is_advanced"):
         marks.append("avancado")
-    if nome and RE_SEGREDO.search(nome):
-        marks.append("segredo")
     return ",".join(marks)
 
 
@@ -482,14 +465,12 @@ def _option_sort_key(item):
 
 def format_param(name, param, indent="  "):
     """Uma linha por parametro (mais continuacoes para padrao e opcoes)."""
-    head = f"{indent}{name:<26} {_param_type(param):<10} {_param_marks(param, name):<30}"
+    head = f"{indent}{name:<26} {_param_type(param):<10} {_param_marks(param):<22}"
     desc = param.get("description") or ""
     lines = [f"{head} {desc}".rstrip()]
     default = param.get("default_value")
     if default is not None:
         lines.append(f"{indent}      padrao: {json.dumps(default, ensure_ascii=False)}")
-    if RE_SEGREDO.search(name):
-        lines.append(f"{indent}      deixe fora da linha de comando: exporte {ENV_SENHA}")
     options = _options_line(param)
     if options:
         lines += textwrap.wrap(
@@ -557,10 +538,10 @@ def validate_inputs(inputs, help_data):
         if param.get("optional", False):
             continue
         if name not in inputs or inputs[name] is None:
-            message = f"parametro obrigatorio ausente: {name}"
-            if RE_SEGREDO.search(name):
-                message += f" (exporte {ENV_SENHA} em vez de passar na linha de comando)"
-            errors.append({"message": message, "params": [name]})
+            errors.append({
+                "message": f"parametro obrigatorio ausente: {name}",
+                "params": [name],
+            })
 
     # 3. Enum por indice: fora da faixa, ou rotulo passado no lugar do indice.
     for name, value in inputs.items():
@@ -753,7 +734,6 @@ def cmd_doctor(args):
     print(f"  qgis_process    : {qp or 'NAO ENCONTRADO'}")
     print(f"  pasta do plugin : {PLUGIN_DIR} ({'existe' if PLUGIN_DIR.is_dir() else 'AUSENTE'})")
     print(f"  annotations.json: {'ok' if ANNOTATIONS_PATH.exists() else 'ausente (opcional)'}")
-    print(f"  {ENV_SENHA}: {'definida' if os.environ.get(ENV_SENHA) else 'nao definida'}")
     print(f"  QT_QPA_PLATFORM (sera definido como) : "
           f"{os.environ.get('QT_QPA_PLATFORM', 'offscreen')}")
     cfg = os.environ.get("QGIS_CUSTOM_CONFIG_PATH") or _qgis4_config_path()
@@ -934,45 +914,6 @@ def _load_json_file(path):
         raise SystemExit(f"Falha ao ler JSON de '{path}': {exc}")
 
 
-def mask(name, value):
-    """Valor de parametro pronto para IMPRIMIR: mascara o que for segredo.
-
-    Todo eco de parametro passa por aqui. Um segredo impresso uma vez ja vazou
-    para o terminal, o log e o scrollback."""
-    if RE_SEGREDO.search(name) and value not in (None, ""):
-        return "***"
-    return value
-
-
-def preencher_segredo(inputs, help_data):
-    """Completa o parametro de senha a partir do ambiente, e avisa quando o valor
-    veio pela linha de comando.
-
-    O plugin recebe a senha do PostgreSQL como parametro comum. Na GUI isso vira um
-    campo mascarado; na linha de comando vira historico do shell e linha de processo
-    visivel a outros usuarios da maquina. O ambiente e o caminho menos ruim que nao
-    exige mudar o plugin.
-    """
-    avisos = []
-    params = (help_data or {}).get("parameters", {})
-    nomes = [n for n in params if RE_SEGREDO.search(n)]
-    # Sem contrato (--no-check), ainda da para tratar o que o chamador digitou.
-    nomes += [n for n in inputs if RE_SEGREDO.search(n) and n not in nomes]
-
-    for nome in nomes:
-        if inputs.get(nome):
-            avisos.append(
-                f"AVISO: {nome} veio na linha de comando, e isso fica no historico do shell. "
-                f"Prefira exportar {ENV_SENHA} e omitir o parametro."
-            )
-            continue
-        do_ambiente = os.environ.get(ENV_SENHA)
-        if do_ambiente:
-            inputs[nome] = do_ambiente
-            avisos.append(f"{nome} lido de {ENV_SENHA} (nao aparece na linha de comando).")
-    return avisos
-
-
 def _collect_inputs(args):
     inputs = {}
     if args.params:
@@ -993,19 +934,18 @@ def _collect_inputs(args):
 
 def render_dry_run(alg, inputs, help_data):
     """Mostra exatamente o que seria executado, sem executar."""
-    seguro = {k: mask(k, v) for k, v in inputs.items()}
-    payload = json.dumps({"inputs": seguro}, ensure_ascii=False)
+    payload = json.dumps({"inputs": inputs}, ensure_ascii=False)
     out = [
         f"[dry-run] {alg} (nada foi executado)",
         f"  comando : qgis_process run {alg} -   (parametros pelo stdin)",
         f"  binario : {find_qgis_process() or 'NAO ENCONTRADO'}",
-        "  stdin   : " + payload + "   (segredo mascarado nesta exibicao)",
+        "  stdin   : " + payload,
         "",
         f"  Parametros ({len(inputs)}):",
     ]
     params = (help_data or {}).get("parameters", {})
     for key in sorted(inputs):
-        value = json.dumps(mask(key, inputs[key]), ensure_ascii=False)
+        value = json.dumps(inputs[key], ensure_ascii=False)
         rotulo = ""
         param = params.get(key)
         if param and param.get("available_options"):
@@ -1042,11 +982,6 @@ def cmd_run(args):
                 file=sys.stderr,
             )
 
-    # A senha entra DEPOIS de ler o contrato e ANTES de validar: o preenchimento
-    # pelo ambiente precisa contar como "parametro presente" na checagem.
-    for aviso in preencher_segredo(inputs, help_data):
-        print(aviso, file=sys.stderr)
-
     if help_data is not None:
         # A coercao por tipo vem ANTES da validacao: e ela que transforma a string
         # 'false' no booleano false, e o que for validado tem de ser o que sera enviado.
@@ -1074,8 +1009,7 @@ def cmd_run(args):
     # O returncode do qgis_process e a fonte da verdade de sucesso/falha.
     results = data.get("results")
     if results is not None:
-        seguro = {k: mask(k, v) for k, v in inputs.items()}
-        print(json.dumps({"results": results, "inputs": seguro}, indent=2, ensure_ascii=False))
+        print(json.dumps({"results": results, "inputs": inputs}, indent=2, ensure_ascii=False))
         if code == 0:
             for key, value in results.items():
                 print(f"\n[OK] {key} -> {value}", file=sys.stderr)

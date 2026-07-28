@@ -132,17 +132,27 @@ def test_describe_devolve_contrato_de_verdade(tabela):
 
 
 @needs_qgis
-def test_o_p01_nao_pede_mais_senha(tabela):
-    """A troca do PostgreSQL pelo GeoPackage tirou os 5 parametros de conexao.
+def test_nenhum_algoritmo_pede_segredo(tabela):
+    """Desde a troca do PostgreSQL pelo GeoPackage, a missao e um arquivo e nenhum
+    algoritmo recebe senha. O guardrail de segredo do CLI foi REMOVIDO por isso.
 
-    Se a senha reaparecer aqui, alguem reintroduziu o caminho do banco remoto,
-    e com ele o problema de segredo na linha de comando."""
-    if "criarbanco" not in tabela:
-        pytest.skip("criarbanco nao esta na lista")
-    data, _code, _cached = cli.help_json_cached("ptocontrole:criarbanco")
-    params = data.get("parameters", {})
-    segredos = [n for n in params if cli.RE_SEGREDO.search(n)]
-    assert not segredos, f"o P01 voltou a pedir segredo: {segredos}"
+    Esta guarda fica: se um parametro de senha ou token voltar, alguem
+    reintroduziu credencial na linha de comando, e o guardrail precisa voltar
+    junto. Aqui o alarme custa uma regex, e nao um modulo inteiro de codigo morto.
+    """
+    parece_segredo = re.compile(r"senha|password|passwd|secret|token", re.IGNORECASE)
+    achados = []
+    for nome in sorted(tabela):
+        data, _code, _cached = cli.help_json_cached(f"{cli.PROVIDER}:{nome}")
+        if data is None:
+            continue
+        achados += [
+            f"{nome}.{p}" for p in data.get("parameters", {}) if parece_segredo.search(p)
+        ]
+    assert not achados, (
+        "parametro de segredo voltou ao plugin: " + ", ".join(achados)
+        + ". Reponha o guardrail do CLI (mascara na saida e leitura do ambiente)."
+    )
 
 
 @needs_qgis
