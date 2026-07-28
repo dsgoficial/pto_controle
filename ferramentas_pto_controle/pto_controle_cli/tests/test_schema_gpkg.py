@@ -230,14 +230,20 @@ def test_toda_coluna_do_arquivo_e_visivel_ao_gdal(gpkg):
 
 
 @needs_gdal
-def test_as_tres_camadas_espaciais_tem_geometria_e_srs(gpkg):
-    esperado = {
-        "ponto_controle_p": "Point",
-        "controle_medicao_a": "Polygon",
-        "ponto_controle_virtual_p": "3D Point",
-    }
+def test_a_camada_espacial_tem_geometria_e_srs(gpkg):
+    """Desde 2026-07-28 a missão tem UMA camada espacial.
+
+    O `controle_medicao_a` (polígono de lote, com contagem por trigger) e o
+    `ponto_controle_virtual_p` saíram por decisão do chefe: não são necessários
+    nem no plugin nem no Controle do Acervo. Este teste também garante que
+    nenhuma outra camada com geometria apareça por engano.
+    """
+    esperado = {"ponto_controle_p": "Point"}
+    assert set(gpkg["geometrias"]) == set(esperado), (
+        f"camadas com geometria: {sorted(gpkg['geometrias'])}, "
+        f"esperava {sorted(esperado)}"
+    )
     for nome, tipo in esperado.items():
-        assert nome in gpkg["geometrias"], f"{nome} nao tem coluna de geometria"
         obtido, srs = gpkg["geometrias"][nome]
         assert obtido == tipo, f"{nome}: geometria {obtido}, esperava {tipo}"
         assert srs == "4674", f"{nome}: SRS {srs}, esperava 4674"

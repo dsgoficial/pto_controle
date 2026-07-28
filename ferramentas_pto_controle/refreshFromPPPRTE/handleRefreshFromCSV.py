@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 import csv
 
-from ..utils.missao import conecta, ponto_gpkg, recontar_controle_medicao
+from ..utils.missao import conecta, ponto_gpkg
 
 class HandleRefreshFromCSV():
 
@@ -73,11 +73,6 @@ class HandleRefreshFromCSV():
             )
         self.atualizados += 1
         self.conn.commit()
-
-    def recontar(self):
-        tocados = recontar_controle_medicao(self.conn)
-        self.conn.commit()
-        return tocados
 
     @staticmethod
     def evaluateCoords(lat, lon):

@@ -93,9 +93,6 @@ class RefreshDB(QgsProcessingAlgorithm):
             'Pontos: {inseridos} inseridos, {atualizados} atualizados, '
             '{preservados} preservados por já estarem aprovados.'.format(**resumo)
         )
-        feedback.pushInfo(
-            f'Polígonos de controle recontados: {refresh.recontar()}'
-        )
         msg = refresh.create()
         feedback.pushInfo(f"{msg}")
 
@@ -149,7 +146,6 @@ class RefreshDB(QgsProcessingAlgorithm):
 
             Desde a troca do PostgreSQL pelo GeoPackage, esta rotina escreve no arquivo da missão criado no P01. Sumiram os cinco parâmetros de conexão.
             - Coluna que o CSV traz e a tabela não tem é DESCARTADA e RELATADA no log, em vez de derrubar a carga.
-            - A contagem de pontos por polígono de controle, que no PostgreSQL era trigger automático, agora roda ao fim desta rotina.
             ''')
 
     def shortDescription(self):

@@ -27,12 +27,7 @@ import pyproj
 import shutil
 from datetime import datetime, timedelta
 
-from ..utils.missao import (
-    conecta,
-    colunas_da_tabela,
-    upsert_ponto,
-    recontar_controle_medicao,
-)
+from ..utils.missao import conecta, colunas_da_tabela, upsert_ponto
 
 
 class HandleRefreshDB():
@@ -122,12 +117,6 @@ class HandleRefreshDB():
             )
         self.conn.commit()
         return resumo, avisos
-
-    def recontar(self):
-        """A recontagem que era trigger no PostGIS. Aqui e explícita e por lote."""
-        tocados = recontar_controle_medicao(self.conn)
-        self.conn.commit()
-        return tocados
 
     def getAdditionalInfo(self, point):
         croqui = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '4_Croqui' and x.match('*{}_CROQUI.*'.format(point['cod_ponto']))]

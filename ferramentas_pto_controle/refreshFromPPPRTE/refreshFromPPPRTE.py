@@ -93,7 +93,6 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
             refresh.readCSV()
 
         feedback.pushInfo(f'Pontos atualizados: {refresh.atualizados}')
-        feedback.pushInfo(f'Polígonos de controle recontados: {refresh.recontar()}')
 
         return {self.OUTPUT: 'Processamento Concluído'}
 
@@ -149,7 +148,6 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
 
             Desde a troca do PostgreSQL pelo GeoPackage, esta rotina escreve no arquivo da missão criado no P01.
             - Ponto processado que não existe na missão faz a rotina PARAR com o código do ponto na mensagem. Antes o UPDATE não achava a linha e seguia calado.
-            - A contagem de pontos por polígono de controle roda ao fim desta rotina.
             ''')
 
     def shortDescription(self):
