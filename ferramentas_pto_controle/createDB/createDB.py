@@ -35,7 +35,7 @@ from .gpkg_schema import criar_missao
 
 
 class CreateDatabase(QgsProcessingAlgorithm):
-    """Cria o GeoPackage da missao, copiando a semente versionada no plugin."""
+    """Cria o GeoPackage da missão, copiando a semente versionada no plugin."""
 
     OUTPUT = 'OUTPUT'
     SAIDA = 'SAIDA'
@@ -57,8 +57,8 @@ class CreateDatabase(QgsProcessingAlgorithm):
         feedback.pushInfo('Criando a missão a partir da semente do plugin...')
         try:
             # A copia confere, antes de tudo, se a semente corresponde ao
-            # new_db.sql de hoje. Semente defasada entregaria uma missao com
-            # schema velho, com confianca e sem aviso.
+            # new_db.sql de hoje. Semente defasada entregaria uma missão com
+            # schema velho, com confiança e sem aviso.
             criado = criar_missao(saida)
         except FileExistsError as erro:
             raise QgsProcessingException(str(erro))
@@ -87,7 +87,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('01 - Criar banco de dados')
+        return self.tr('01 - Criar a missão (GeoPackage)')
 
     def group(self):
         """
@@ -108,7 +108,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr('''
-            P01, primeiro passo do fluxo. Cria o arquivo GeoPackage da missão, já com as tabelas do ponto de controle e os códigos de domínio semeados.
+            P01, primeiro passo do fluxo. Cria o arquivo da missão (GeoPackage), já com as tabelas do ponto de controle e os códigos de domínio semeados.
 
             Antes: nada. Não precisa mais de PostgreSQL nem de PostGIS.
             Depois: P02, validar a estrutura de pastas.
@@ -123,7 +123,7 @@ class CreateDatabase(QgsProcessingAlgorithm):
 
     def shortDescription(self):
         return self.tr(
-            'P01, primeiro passo do fluxo. Cria o arquivo GeoPackage da missão, já com as tabelas do ponto de controle e os códigos de domínio semeados.'
+            'P01, primeiro passo do fluxo. Cria o arquivo da missão (GeoPackage), já com as tabelas do ponto de controle e os códigos de domínio semeados.'
         )
 
     def tr(self, string):

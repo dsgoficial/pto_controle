@@ -2,27 +2,27 @@
 """
 Prova que a SEMENTE do GeoPackage carrega o MESMO schema que o PostGIS carregava.
 
-O `new_db.sql` continua sendo a unica fonte do schema. A semente
+O `new_db.sql` continua sendo a única fonte do schema. A semente
 (`createDB/missao_semente.gpkg`) e derivada dele por `gpkg_schema.gerar_semente`,
-versionada, e o P01 apenas a COPIA: em campo nao se interpreta SQL.
+versionada, e o P01 apenas a COPIA: em campo não se interpreta SQL.
 
 Semente e artefato derivado, e artefato derivado apodrece. Sao duas guardas:
 
-- `test_semente_corresponde_ao_new_db_sql` compara a impressao digital gravada
-  dentro da semente com a do `new_db.sql` de hoje. Nao precisa de GDAL, entao roda
+- `test_semente_corresponde_ao_new_db_sql` compara a impressão digital gravada
+  dentro da semente com a do `new_db.sql` de hoje. Não precisa de GDAL, então roda
   SEMPRE. E a guarda que pega o esquecimento de regerar.
 - as demais abrem a semente e comparam tabela a tabela e coluna a coluna.
 
-A guarda e por CONTEUDO e nao por data: num clone novo o git escreve todos os
+A guarda e por CONTEUDO e não por data: num clone novo o git escreve todos os
 arquivos no mesmo instante, e comparar mtime aprovaria uma semente velha.
 
-Confere as DUAS superficies, e a distincao nao e teorica. Coluna de tipo invalido
+Confere as DUAS superficies, e a distincao não é teorica. Coluna de tipo inválido
 no GeoPackage (foi o caso de `TIMESTAMP WITH TIME ZONE`) EXISTE no arquivo, passa
-na conferencia por SQLite, e some para o GDAL, ou seja, some no QGIS. Achado em
-2026-07-28, quando `inicio_rastreio` e `fim_rastreio` ficaram invisiveis.
+na conferência por SQLite, e some para o GDAL, ou seja, some no QGIS. Achado em
+2026-07-28, quando `inicio_rastreio` e `fim_rastreio` ficaram invisíveis.
 
-Roda num subprocesso do python do QGIS, que e onde o GDAL existe. O python da
-suite nao tem osgeo, e instalar na maquina de quem desenvolve nao e nosso papel.
+Roda num subprocesso do python do QGIS, que é onde o GDAL existe. O python da
+suite não tem osgeo, e instalar na máquina de quem desenvolve não é nosso papel.
 
 Rodar:
     pytest ferramentas_pto_controle/pto_controle_cli/tests/test_schema_gpkg.py -v
@@ -62,13 +62,13 @@ needs_gdal = pytest.mark.skipif(
 )
 
 # --------------------------------------------------------------------------
-# A guarda principal: nao precisa de GDAL, entao nunca pula.
+# A guarda principal: não precisa de GDAL, então nunca pula.
 # --------------------------------------------------------------------------
 def test_semente_corresponde_ao_new_db_sql():
     """Pega o esquecimento de regerar a semente depois de mexer no schema.
 
-    Semente defasada e PIOR que semente ausente: ela entrega uma missao com
-    schema velho, com confianca e sem aviso."""
+    Semente defasada e PIOR que semente ausente: ela entrega uma missão com
+    schema velho, com confiança e sem aviso."""
     import hashlib
     import sqlite3
 
@@ -164,7 +164,7 @@ def gpkg(tmp_path_factory):
 
 
 def _declarado_no_postgis():
-    """{tabela: [colunas]} lido do new_db.sql, o lado PostGIS da comparacao."""
+    """{tabela: [colunas]} lido do new_db.sql, o lado PostGIS da comparação."""
     import re
 
     sql = (PLUGIN / "createDB" / "new_db.sql").read_text(encoding="utf-8")
@@ -174,7 +174,7 @@ def _declarado_no_postgis():
     ):
         esquema, tabela = m.group(1), m.group(2)
         if esquema == "public":
-            continue  # layer_styles: o GeoPackage tem mecanismo proprio
+            continue  # layer_styles: o GeoPackage tem mecanismo próprio
         nome = f"dominios_{tabela}" if esquema == "dominios" else tabela
         colunas = []
         for linha in m.group("corpo").splitlines():
@@ -214,9 +214,9 @@ def test_nenhuma_coluna_se_perdeu(gpkg):
 
 @needs_gdal
 def test_toda_coluna_do_arquivo_e_visivel_ao_gdal(gpkg):
-    """A conferencia que a comparacao por SQLite NAO faz.
+    """A conferência que a comparação por SQLite NÃO faz.
 
-    Coluna com tipo que o GeoPackage nao define existe no arquivo e some no QGIS.
+    Coluna com tipo que o GeoPackage não define existe no arquivo e some no QGIS.
     Aconteceu com TIMESTAMP WITH TIME ZONE em inicio_rastreio e fim_rastreio."""
     invisiveis = []
     for nome, colunas in sorted(gpkg["no_arquivo"].items()):
@@ -245,9 +245,9 @@ def test_as_tres_camadas_espaciais_tem_geometria_e_srs(gpkg):
 
 @needs_gdal
 def test_os_dominios_foram_semeados(gpkg):
-    """Sem os codigos semeados, toda escrita bate na chave estrangeira."""
+    """Sem os códigos semeados, toda escrita bate na chave estrangeira."""
     assert gpkg["dominios"] == 98, (
         f"{gpkg['dominios']} linhas de dominio, esperava 98. "
-        "Se o new_db.sql ganhou ou perdeu codigo, ajuste o numero aqui de proposito."
+        "Se o new_db.sql ganhou ou perdeu código, ajuste o número aqui de propósito."
     )
     assert sum(1 for t in gpkg["tabelas"] if t.startswith("dominios_")) == 15

@@ -1,29 +1,28 @@
 # -*- coding: utf-8 -*-
-"""Acesso ao GeoPackage da missao: o que substitui o psycopg2 no plugin.
+"""Acesso ao GeoPackage da missão: o que substitui o psycopg2 no plugin.
 
-Tres coisas que o PostGIS dava de graca e aqui precisam de codigo:
+Três coisas que o PostGIS dava de graça e aqui precisam de código:
 
-1. **A geometria.** Nao ha `ST_GeomFromText` no SQLite puro (medido em
-   2026-07-28: a funcao existe no dialeto SQLite do GDAL, e nao na conexao comum).
-   O ponto vai no formato binario do GeoPackage, montado por `ponto_gpkg`.
-2. **A chave estrangeira.** Ela e da CONEXAO, nao do servidor: so vale com
+1. **A geometria.** Não há `ST_GeomFromText` no SQLite puro (medido em
+   2026-07-28: a função existe no dialeto SQLite do GDAL, e não na conexão
+   comum). O ponto vai no formato binário do GeoPackage, montado por `ponto_gpkg`.
+2. **A chave estrangeira.** Ela é da CONEXÃO, não do servidor: só vale com
    `PRAGMA foreign_keys=ON`. Use sempre `conecta`, nunca `sqlite3.connect` cru.
 3. **A recontagem do controle_medicao_a.** Era trigger plpgsql com `ST_Intersects`
    a cada INSERT, UPDATE e DELETE. Virou `recontar_controle_medicao`, chamada ao
    fim das rotinas que escrevem ponto.
 
-Ao portar, os comandos passaram a usar PARAMETRO em vez de interpolar valor na
-string. O codigo antigo montava `'{}'.format(valor)`, o que quebra em nome com
-apostrofo e nao tem defesa nenhuma contra o que vier do CSV do medidor.
+Ao portar, os comandos passaram a usar PARÂMETRO em vez de interpolar valor na
+string. O código antigo montava `'{}'.format(valor)`, o que quebra em nome com
+apóstrofo e não tem defesa nenhuma contra o que vier do CSV do medidor.
 """
 import struct
-from pathlib import Path
 
 SRID = 4674
 
 
 def conecta(caminho):
-    """Conexao com a missao, com a chave estrangeira LIGADA."""
+    """Conexão com a missão, com a chave estrangeira LIGADA."""
     from ..createDB.gpkg_schema import conecta as _conecta
 
     return _conecta(caminho)
@@ -32,16 +31,17 @@ def conecta(caminho):
 def ponto_gpkg(longitude, latitude, srid=SRID):
     """Devolve o BLOB de geometria que o GeoPackage espera, para um ponto 2D.
 
-    O formato e o do padrao OGC GeoPackage: cabecalho 'GP', versao, flags,
-    srs_id, e em seguida o WKB. Sem envelope, que e opcional para ponto.
-    Devolve None quando falta coordenada, que e o caso do ponto ainda nao
+    O formato é o do padrão OGC GeoPackage: cabeçalho 'GP', versão, flags,
+    srs_id, e em seguida o WKB. Sem envelope, que é opcional para ponto.
+
+    Devolve None quando falta coordenada, que é o caso do ponto ainda não
     processado (o P03 grava o ponto antes de existir PPP ou RTE).
     """
     if longitude in (None, "") or latitude in (None, ""):
         return None
     lon, lat = float(longitude), float(latitude)
 
-    # magic 'GP', versao 0, flags 0x01 (cabecalho little-endian, sem envelope)
+    # magic 'GP', versão 0, flags 0x01 (cabeçalho little-endian, sem envelope)
     cabecalho = b"GP" + struct.pack("<BBi", 0, 0x01, srid)
     # WKB: byte de ordem (1 = little), tipo 1 (Point), x, y
     wkb = struct.pack("<BIdd", 1, 1, lon, lat)
@@ -49,35 +49,45 @@ def ponto_gpkg(longitude, latitude, srid=SRID):
 
 
 def _le_geometria(blob):
-    """(lon, lat) de um BLOB de ponto do GeoPackage, ou None. Usado na conferencia."""
+    """(lon, lat) de um BLOB de ponto do GeoPackage, ou None. Usado na conferência."""
     if not blob or blob[:2] != b"GP":
         return None
     flags = blob[3]
     envelope = (flags >> 1) & 0x07
     tamanho_envelope = {0: 0, 1: 32, 2: 48, 3: 48, 4: 64}.get(envelope, 0)
     inicio = 8 + tamanho_envelope
-    ordem, tipo = struct.unpack_from("<BI", blob, inicio)
+    _ordem, tipo = struct.unpack_from("<BI", blob, inicio)
     if tipo != 1:
         return None
     return struct.unpack_from("<dd", blob, inicio + 5)
 
 
+def _wkb_de(blob):
+    """Tira o cabeçalho do GeoPackage e devolve o WKB puro."""
+    if not blob or blob[:2] != b"GP":
+        return blob
+    flags = blob[3]
+    envelope = (flags >> 1) & 0x07
+    tamanho = {0: 0, 1: 32, 2: 48, 3: 48, 4: 64}.get(envelope, 0)
+    return blob[8 + tamanho:]
+
+
 def colunas_da_tabela(con, tabela):
     """Nomes das colunas, lidos do arquivo. Serve para descartar a chave que o CSV
-    trouxe e a tabela nao tem, em vez de estourar no meio da carga."""
+    trouxe e a tabela não tem, em vez de estourar no meio da carga."""
     return [r[1] for r in con.execute(f"PRAGMA table_info({tabela})")]
 
 
 def upsert_ponto(con, dados, colunas_validas=None):
-    """Insere ou atualiza um ponto pelo cod_ponto. Devolve (acao, descartadas).
+    """Insere ou atualiza um ponto pelo cod_ponto. Devolve (ação, descartadas).
 
     Espelha o `ON CONFLICT (cod_ponto) DO UPDATE ... WHERE tipo_situacao IN
-    (1,2,4,9999)` do PostGIS: ponto ja APROVADO (situacao 3) nao se sobrescreve
+    (1,2,4,9999)` do PostGIS: ponto já APROVADO (situação 3) não se sobrescreve
     por recarga de pasta.
 
-    `descartadas` sao as chaves que o CSV ou o JSON trouxeram e a tabela nao tem.
+    `descartadas` são as chaves que o CSV ou o JSON trouxeram e a tabela não tem.
     O chamador AVISA em vez de engolir, porque campo com nome errado que entra
-    calado e o modo de falha mais caro que este vault ja catalogou.
+    calado é o modo de falha mais caro que este vault já catalogou.
     """
     if colunas_validas is None:
         colunas_validas = colunas_da_tabela(con, "ponto_controle_p")
@@ -99,38 +109,38 @@ def upsert_ponto(con, dados, colunas_validas=None):
 
     if existe is None:
         col_sql = ", ".join(campos + ["geom"])
-        marc = ", ".join(["?"] * (len(valores) + 1))
+        marcadores = ", ".join(["?"] * (len(valores) + 1))
         con.execute(
-            f"INSERT INTO ponto_controle_p ({col_sql}) VALUES ({marc})",
+            f"INSERT INTO ponto_controle_p ({col_sql}) VALUES ({marcadores})",
             valores + [geom],
         )
         return "inserido", descartadas
 
     if existe[0] == 3:
-        # Aprovado nao se mexe. E a mesma regra do WHERE do ON CONFLICT antigo.
+        # Aprovado não se mexe. É a mesma regra do WHERE do ON CONFLICT antigo.
         return "preservado", descartadas
 
-    atrib = ", ".join(f"{c} = ?" for c in campos)
+    atribuicoes = ", ".join(f"{c} = ?" for c in campos)
     con.execute(
-        f"UPDATE ponto_controle_p SET {atrib}, geom = ? WHERE cod_ponto = ?",
+        f"UPDATE ponto_controle_p SET {atribuicoes}, geom = ? WHERE cod_ponto = ?",
         valores + [geom, dados["cod_ponto"]],
     )
     return "atualizado", descartadas
 
 
 def recontar_controle_medicao(con):
-    """Recalcula total_pontos_aprovados e total_pontos_em_avaliacao por poligono.
+    """Recalcula total_pontos_aprovados e total_pontos_em_avaliacao por polígono.
 
-    Substitui a funcao plpgsql `atualizar_controle_medicao`, que era disparada por
-    trigger. O SQLite nao tem `ST_Intersects` na conexao comum, entao o teste de
-    ponto em poligono acontece aqui, pelo OGR.
+    Substitui a função plpgsql `atualizar_controle_medicao`, que era disparada por
+    trigger. O SQLite não tem `ST_Intersects` na conexão comum, então o teste de
+    ponto em polígono acontece aqui, pelo OGR.
 
-    Diferenca de comportamento que vale registrar: no PostgreSQL a recontagem era
-    por LINHA e automatica. Aqui ela e por LOTE e explicita, entao quem escreve
-    ponto tem de chamar. Em compensacao, custa uma passada em vez de uma por
-    ponto inserido.
+    Diferença de comportamento que vale registrar: no PostgreSQL a recontagem era
+    por LINHA e automática. Aqui ela é por LOTE e explícita, então quem escreve
+    ponto tem de chamar. Em compensação, custa uma passada em vez de uma por ponto
+    inserido.
 
-    Devolve quantos poligonos foram atualizados.
+    Devolve quantos polígonos foram atualizados.
     """
     from osgeo import ogr
 
@@ -138,7 +148,6 @@ def recontar_controle_medicao(con):
     for fid, blob in con.execute(
         "SELECT id, geom FROM controle_medicao_a WHERE geom IS NOT NULL"
     ):
-        # O BLOB do GeoPackage tem cabecalho antes do WKB; o OGR le o formato.
         geom = ogr.CreateGeometryFromWkb(_wkb_de(blob))
         if geom is not None:
             poligonos.append((fid, geom))
@@ -152,9 +161,9 @@ def recontar_controle_medicao(con):
     ):
         coord = _le_geometria(blob)
         if coord:
-            p = ogr.Geometry(ogr.wkbPoint)
-            p.AddPoint_2D(coord[0], coord[1])
-            pontos.append((situacao, p))
+            ponto = ogr.Geometry(ogr.wkbPoint)
+            ponto.AddPoint_2D(coord[0], coord[1])
+            pontos.append((situacao, ponto))
 
     tocados = 0
     for fid, poligono in poligonos:
@@ -167,13 +176,3 @@ def recontar_controle_medicao(con):
         )
         tocados += 1
     return tocados
-
-
-def _wkb_de(blob):
-    """Tira o cabecalho do GeoPackage e devolve o WKB puro."""
-    if not blob or blob[:2] != b"GP":
-        return blob
-    flags = blob[3]
-    envelope = (flags >> 1) & 0x07
-    tamanho = {0: 0, 1: 32, 2: 48, 3: 48, 4: 64}.get(envelope, 0)
-    return blob[8 + tamanho:]

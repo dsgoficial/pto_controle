@@ -3,13 +3,13 @@
 Guarda dos IDS do plugin, lida do fonte por `ast` (sem importar QGIS).
 
 Por que este teste existe: em um QgsProcessingAlgorithm, o `name()` E o
-identificador, nao o rotulo. Ate 2026-07-28 os 15 algoritmos devolviam ali o
-titulo humano ('01 - Criar banco de dados'), o que produzia ids com espaco e
-acento e tornava o plugin inutilizavel pelo qgis_process. O conserto so se
-sustenta com um alarme: quem colar um titulo no `name()` de novo quebra aqui.
+identificador, não o rótulo. Ate 2026-07-28 os 15 algoritmos devolviam ali o
+título humano ('01 - Criar banco de dados'), o que produzia ids com espaço e
+acento e tornava o plugin inutilizável pelo qgis_process. O conserto só se
+sustenta com um alarme: quem colar um título no `name()` de novo quebra aqui.
 
-Le o fonte com `ast` de proposito. Importar os modulos exigiria o QGIS, e a
-propriedade que se quer garantir e sintatica, nao de execucao.
+Le o fonte com `ast` de propósito. Importar os módulos exigiria o QGIS, e a
+propriedade que se quer garantir e sintática, não de execução.
 
 Rodar:
     pytest ferramentas_pto_controle/pto_controle_cli/tests/test_ids_do_plugin.py -v
@@ -22,11 +22,11 @@ from pathlib import Path
 import pytest
 
 CLI_DIR = Path(__file__).resolve().parent.parent
-# O CLI mora dentro do pacote do plugin, entao o plugin e a pasta de cima.
+# O CLI mora dentro do pacote do plugin, então o plugin e a pasta de cima.
 PLUGIN = CLI_DIR.parent
 ANNOTATIONS = CLI_DIR / "annotations.json"
 
-# A regra do QGIS, transcrita do docstring que o proprio plugin carrega:
+# A regra do QGIS, transcrita do docstring que o próprio plugin carrega:
 # "Names should contain lowercase alphanumeric characters only and no spaces or
 # other formatting characters."
 RE_ID_VALIDO = re.compile(r"^[a-z0-9]+$")
@@ -36,8 +36,8 @@ PROVIDER = "ptocontrole"
 def _retorno_constante(classe, metodo):
     """String devolvida por `def <metodo>(self): return '...'`, ou None.
 
-    None quer dizer 'nao e uma constante' (ex.: `return self.tr(self.name())`),
-    que e informacao util para o teste, nao falha de leitura.
+    None quer dizer 'não é uma constante' (ex.: `return self.tr(self.name())`),
+    que é informação útil para o teste, não falha de leitura.
     """
     for no in classe.body:
         if not isinstance(no, ast.FunctionDef) or no.name != metodo:
@@ -74,7 +74,7 @@ def _classes_de(caminho, base):
 
 
 def fontes_do_plugin():
-    """Os .py do plugin, fora a pasta do proprio CLI (que nao tem algoritmo)."""
+    """Os .py do plugin, fora a pasta do próprio CLI (que não tem algoritmo)."""
     return sorted(p for p in PLUGIN.rglob("*.py") if CLI_DIR not in p.parents)
 
 
@@ -93,8 +93,8 @@ ALGORITMOS = algoritmos()
 def test_achou_os_algoritmos():
     """Se este teste quebrar, os outros deste arquivo passariam por vacuidade.
 
-    Eram 15 ate 2026-07-28, quando o P17 (preparar a missao para o Controle do
-    Acervo) entrou. Ao acrescentar algoritmo, ajuste este numero de PROPOSITO."""
+    Eram 15 até 2026-07-28, quando o P17 (preparar a missão para o Controle do
+    Acervo) entrou. Ao acrescentar algoritmo, ajuste este número de PROPOSITO."""
     assert len(ALGORITMOS) == 16, [c.name for _, c in ALGORITMOS]
 
 
@@ -104,19 +104,19 @@ def test_name_e_um_id_valido(caminho, classe):
     assert nome is not None, f"{classe.name}: name() nao devolve uma string constante"
     assert RE_ID_VALIDO.match(nome), (
         f"{classe.name} em {caminho.name}: name() devolve {nome!r}. "
-        "O name() e o ID do algoritmo: so minuscula e digito, sem espaco, acento, "
-        "hifen ou numeracao. O titulo humano vai no displayName()."
+        "O name() é o ID do algoritmo: só minúscula e dígito, sem espaço, acento, "
+        "hífen ou numeração. O título humano vai no displayName()."
     )
 
 
 @pytest.mark.parametrize("caminho,classe", ALGORITMOS, ids=lambda x: getattr(x, "name", ""))
 def test_display_name_carrega_o_titulo_humano(caminho, classe):
-    """O rotulo da caixa de ferramentas do QGIS nao pode ter sumido no conserto do id."""
+    """O rótulo da caixa de ferramentas do QGIS não pode ter sumido no conserto do id."""
     titulo = _chamada_tr_constante(classe, "displayName")
-    assert titulo, f"{classe.name}: displayName() deveria devolver self.tr('<titulo>')"
-    # O prefixo numerico e o que ordena a lista no QGIS e casa com o P01..P16 do manual.
+    assert titulo, f"{classe.name}: displayName() deveria devolver self.tr('<título>')"
+    # O prefixo numérico é o que ordena a lista no QGIS e casa com o P01..P16 do manual.
     assert re.match(r"^\d{2} - ", titulo), (
-        f"{classe.name}: displayName() = {titulo!r}, esperava comecar com 'NN - '"
+        f"{classe.name}: displayName() = {titulo!r}, esperava começar com 'NN - '"
     )
 
 
@@ -127,11 +127,11 @@ def test_ids_sao_unicos():
 
 
 def test_numeracao_do_manual_sem_repeticao():
-    """Os numeros do displayName sao os passos P01..P16 do manual de uso."""
+    """Os números do displayName são os passos P01..P16 do manual de uso."""
     titulos = [_chamada_tr_constante(c, "displayName") for _, c in ALGORITMOS]
     numeros = sorted(int(t[:2]) for t in titulos)
     assert len(set(numeros)) == len(numeros), f"passo repetido: {numeros}"
-    # O 05 e externo (PPP no site do IBGE, ou RTE noutro software): nao e algoritmo.
+    # O 05 e externo (PPP no site do IBGE, ou RTE noutro software): não é algoritmo.
     assert 5 not in numeros
 
 
@@ -167,10 +167,10 @@ def test_provider_registra_todos_os_algoritmos():
 
 
 # --------------------------------------------------------------------------
-# Anotacoes curadas x ids reais
+# Anotações curadas x ids reais
 #
-# Este e o alarme de renomeacao: a prosa curada aponta ids, e um id que muda sem
-# a anotacao acompanhar deixaria o `describe` mudo, sem ninguem perceber.
+# Este e o alarme de renomeação: a prosa curada aponta ids, e um id que muda sem
+# a anotação acompanhar deixaria o `describe` mudo, sem ninguém perceber.
 # --------------------------------------------------------------------------
 def test_anotacoes_apontam_algoritmos_que_existem():
     dados = json.loads(ANNOTATIONS.read_text(encoding="utf-8"))
@@ -180,9 +180,9 @@ def test_anotacoes_apontam_algoritmos_que_existem():
 
 
 def test_anotacoes_nao_repetem_o_que_o_describe_ja_le():
-    """Regra do padrao agent-first: contrato copiado apodrece. A anotacao so pode
-    trazer o que a introspecao nao alcanca (ordem do fluxo, armadilha), nunca a
-    lista de parametros."""
+    """Regra do padrão agent-first: contrato copiado apodrece. A anotação só pode
+    trazer o que a introspecao não alcanca (ordem do fluxo, armadilha), nunca a
+    lista de parâmetros."""
     dados = json.loads(ANNOTATIONS.read_text(encoding="utf-8"))
     for chave, anotacao in dados.items():
         if chave.startswith("_"):

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Testes das camadas que ficam ENTRE o chamador e o qgis_process: validacao local
-dos parametros, cache do contrato em disco, tratamento de segredo e formatacao do
+Testes das camadas que ficam ENTRE o chamador e o qgis_process: validação local
+dos parâmetros, cache do contrato em disco, tratamento de segredo e formatacao do
 `describe`.
 
 Nenhum destes precisa de QGIS: o contrato entra como fixture, no formato que o
-`qgis_process help --json` devolve. E de proposito, porque a validacao existe para
-poupar a chamada cara, entao testa-la nao pode custar essa chamada.
+`qgis_process help --json` devolve. E de propósito, porque a validação existe para
+poupar a chamada cara, então testa-lá não pode custar essa chamada.
 
 Rodar:
     pytest ferramentas_pto_controle/pto_controle_cli/tests/test_cli_contract.py -v
@@ -82,7 +82,7 @@ def test_full_id_acrescenta_o_provider():
 
 def test_full_id_respeita_id_ja_completo():
     assert cli.full_id("ptocontrole:criarbanco") == "ptocontrole:criarbanco"
-    # Outro provider precisa passar intacto: o CLI nao e dono do namespace.
+    # Outro provider precisa passar intacto: o CLI não é dono do namespace.
     assert cli.full_id("native:buffer") == "native:buffer"
 
 
@@ -92,7 +92,7 @@ def test_version_key_ordena_por_numero_e_nao_por_texto():
 
 
 # --------------------------------------------------------------------------
-# Coercao de KEY=VALUE
+# Coerção de KEY=VALUE
 # --------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "entrada,esperado",
@@ -101,7 +101,7 @@ def test_version_key_ordena_por_numero_e_nao_por_texto():
         ("0", 0),
         ("-3", -3),
         ("0.11", 0.11),
-        # Os que NAO podem virar numero, sob pena de corromper o valor:
+        # Os que NÃO podem virar número, sob pena de corromper o valor:
         ("007", "007"),
         ("1_000", "1_000"),
         ("inf", "inf"),
@@ -132,7 +132,7 @@ def test_parse_json_stdout_devolve_none_em_lixo():
 
 
 # --------------------------------------------------------------------------
-# Validacao local
+# Validação local
 # --------------------------------------------------------------------------
 def test_validacao_aprova_corpo_completo():
     inputs = {"SERVERIP": "localhost", "PORT": 5432, "BDNAME": "bpc",
@@ -148,7 +148,7 @@ def test_validacao_pega_obrigatorio_ausente():
 
 def test_validacao_pega_nome_inexistente_e_sugere():
     """O modo de falha mais caro: o qgis_process IGNORA a chave desconhecida em
-    silencio e aplica o padrao. A validacao existe para pegar isso antes."""
+    silêncio e aplica o padrão. A validação existe para pegar isso antes."""
     erros = cli.validate_inputs({"SERVER_IP": "localhost"}, HELP)
     mensagens = [e["message"] for e in erros]
     assert any("parametro inexistente: SERVER_IP" in m for m in mensagens)
@@ -164,7 +164,7 @@ def test_validacao_pega_rotulo_no_lugar_do_indice():
     erros = cli.validate_inputs({"PASTA_ESTRUTURA": "/x", "TIPO_MODELO": "Retrato"}, HELP_ENUM)
     mensagens = " ".join(e["message"] for e in erros)
     assert "nao e indice" in mensagens
-    # A mensagem tem de dizer QUAL e o indice, senao obriga uma segunda consulta.
+    # A mensagem tem de dizer QUAL e o índice, senao obriga uma segunda consulta.
     assert "1" in mensagens
 
 
@@ -185,10 +185,10 @@ def test_enum_indices(valor, esperado):
 
 
 # --------------------------------------------------------------------------
-# Coercao por tipo do contrato
+# Coerção por tipo do contrato
 #
 # Achado em 2026-07-28, no primeiro dry-run contra o plugin real: `IGN_PROC=false`
-# virava a string 'false', que e nao-vazia e portanto verdadeira. O parametro faria
+# virava a string 'false', que e não-vazia e portanto verdadeira. O parâmetro faria
 # o OPOSTO do pedido, sem erro nenhum.
 # --------------------------------------------------------------------------
 HELP_BOOL = {
@@ -219,7 +219,7 @@ def test_booleano_ilegivel_e_erro_e_nao_chute():
     inputs = {"FOLDER": "/x", "IGN_PROC": "talvez"}
     erros = cli.coagir_por_contrato(inputs, HELP_BOOL)
     assert any("nao e booleano" in e["message"] for e in erros)
-    # Nao pode ter chutado um valor: melhor reprovar do que enviar o oposto.
+    # Não pode ter chutado um valor: melhor reprovar do que enviar o oposto.
     assert inputs["IGN_PROC"] == "talvez"
 
 
@@ -227,7 +227,7 @@ def test_coercao_nao_toca_o_que_nao_e_booleano():
     inputs = {"FOLDER": "false", "IGN_PROC": True}
     assert cli.coagir_por_contrato(inputs, HELP_BOOL) == []
     assert inputs["FOLDER"] == "false"  # caminho chamado 'false' continua string
-    assert inputs["IGN_PROC"] is True   # ja era booleano, veio de --params
+    assert inputs["IGN_PROC"] is True   # já era booleano, veio de --params
 
 
 # --------------------------------------------------------------------------
@@ -247,13 +247,13 @@ def test_cache_invalida_quando_a_impressao_digital_muda(tmp_path, monkeypatch):
 
 
 def test_cache_nao_derruba_o_comando_quando_a_escrita_falha(tmp_path, monkeypatch):
-    """O cache e otimizacao. Um destino que nao da para escrever nao pode impedir
+    """O cache e otimização. Um destino que não da para escrever não pode impedir
     de rodar o algoritmo. Aqui o destino e uma pasta DENTRO de um arquivo, que faz
     o mkdir falhar do jeito que um /tmp somente-leitura falharia."""
     arquivo = tmp_path / "isto_e_um_arquivo"
     arquivo.write_text("x", encoding="utf-8")
     monkeypatch.setenv("PTOCONTROLE_CLI_CACHE", str(arquivo / "cache"))
-    cli.cache_write("ptocontrole:criarbanco", HELP)  # nao levanta
+    cli.cache_write("ptocontrole:criarbanco", HELP)  # não levanta
     assert cli.cache_read("ptocontrole:criarbanco") is None
 
 

@@ -45,10 +45,10 @@ class HandleRefreshFromCSV():
                     self.updateDB(point)
 
     def updateDB(self, point):
-        """Grava o resultado do RTE no ponto, por parametro.
+        """Grava o resultado do RTE no ponto, por parâmetro.
 
-        A coluna `fuso` NAO e preenchida aqui, ao contrario do ramo PPP, que a
-        deriva do meridiano central. E assimetria do plugin, nao do porte, e esta
+        A coluna `fuso` NÃO e preenchida aqui, ao contrario do ramo PPP, que a
+        deriva do meridiano central. E assimetria do plugin, não do porte, e esta
         registrada no help do algoritmo.
         """
         cursor = self.conn.execute(

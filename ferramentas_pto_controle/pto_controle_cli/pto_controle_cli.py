@@ -4,30 +4,30 @@
 pto-controle-cli — executa os algoritmos de Processing do plugin Ponto de Controle
 por linha de comando, headless, encapsulando o `qgis_process` do QGIS.
 
-Permite descobrir os algoritmos do plugin, inspecionar os parametros de cada um e
-executa-los, sem abrir o QGIS Desktop. A fonte da verdade e sempre o proprio
-`qgis_process`, consultado ao vivo: a lista e os parametros estao sempre corretos e
-um algoritmo novo aparece sozinho, sem nenhum catalogo pre-gerado. O arquivo
-opcional `annotations.json` so acrescenta conhecimento de dominio (a ordem do fluxo,
-o que precisa rodar antes) que nao da para extrair do qgis_process.
+Permite descobrir os algoritmos do plugin, inspecionar os parâmetros de cada um e
+executa-los, sem abrir o QGIS Desktop. A fonte da verdade e sempre o próprio
+`qgis_process`, consultado ao vivo: a lista e os parâmetros estão sempre corretos e
+um algoritmo novo aparece sozinho, sem nenhum catálogo pré-gerado. O arquivo
+opcional `annotations.json` só acrescenta conhecimento de domínio (a ordem do fluxo,
+o que precisa rodar antes) que não da para extrair do qgis_process.
 
 Comandos
 --------
   list                      Lista os algoritmos do plugin.
-  describe <alg>            Mostra os parametros de um algoritmo.
+  describe <alg>            Mostra os parâmetros de um algoritmo.
   run <alg> [KEY=VALUE ...] Valida e executa um algoritmo.
   doctor                    Diagnostica o ambiente (qgis_process, provider carregado).
   cache                     Mostra ou limpa o cache local do contrato.
 
 O id pode vir com ou sem o prefixo "ptocontrole:", e um prefixo do nome basta quando
-identifica um algoritmo so (`describe criarbanco` ou `describe criar`).
+identifica um algoritmo só (`describe criarbanco` ou `describe criar`).
 
-Antes de executar, o `run` valida os parametros contra o contrato do proprio
-algoritmo (nome inexistente, obrigatorio ausente, indice de enum fora da faixa) e,
-quando reprova, imprime o contrato dos parametros citados. O contrato vem de uma
-chamada ao qgis_process, que custa segundos, entao fica em cache em disco,
-invalidado pela impressao digital do ambiente (ver `cache`). Escapes: `--no-check`
-pula a validacao e `--refresh-cache` forca reler o contrato ao vivo.
+Antes de executar, o `run` válida os parâmetros contra o contrato do próprio
+algoritmo (nome inexistente, obrigatório ausente, índice de enum fora da faixa) e,
+quando reprova, imprime o contrato dos parâmetros citados. O contrato vem de uma
+chamada ao qgis_process, que custa segundos, então fica em cache em disco,
+invalidado pela impressão digital do ambiente (ver `cache`). Escapes: `--no-check`
+pula a validação e `--refresh-cache` forca reler o contrato ao vivo.
 
 Exemplos
 --------
@@ -36,10 +36,10 @@ Exemplos
   python pto_controle_cli.py describe validarestrutura
   python pto_controle_cli.py run validarestrutura --dry-run \\
       FOLDER=D:\\pontos JSON=D:\\pontos\\json_validacao_estrutura_pasta.json
-  python pto_controle_cli.py run criarbanco SAIDA=D:\\missoes\\missao.gpkg
+  python pto_controle_cli.py run criarbanco SAIDA=D:\\missoes\\missão.gpkg
 
-Codigos de saida: 0 sucesso, 2 reprovado na validacao local (nada foi executado),
-qualquer outro e o codigo do proprio qgis_process.
+Códigos de saida: 0 sucesso, 2 reprovado na validação local (nada foi executado),
+qualquer outro e o código do próprio qgis_process.
 """
 import argparse
 import difflib
@@ -57,13 +57,13 @@ from pathlib import Path
 
 PROVIDER = "ptocontrole"
 # Nome da PASTA do plugin no perfil do QGIS, que e como o `qgis_process plugins`
-# se refere a ele (nao confundir com o nome de exibicao do metadata.txt).
+# se refere a ele (não confundir com o nome de exibicao do metadata.txt).
 PLUGIN_NAME = "ferramentas_pto_controle"
 HERE = Path(__file__).resolve().parent
 ANNOTATIONS_PATH = HERE / "annotations.json"
-# Este CLI vive DENTRO do pacote do plugin, entao o pacote e a pasta de cima. Como
-# nao tem __init__.py, o QGIS nao importa esta pasta ao carregar o plugin; ela so
-# viaja junto na instalacao, que e o que faz o CLI estar onde o plugin estiver.
+# Este CLI vive DENTRO do pacote do plugin, então o pacote e a pasta de cima. Como
+# não tem __init__.py, o QGIS não importa esta pasta ao carregar o plugin; ela só
+# viaja junto na instalação, que é o que faz o CLI estar onde o plugin estiver.
 PLUGIN_DIR = HERE.parent
 # Muda quando o FORMATO do arquivo de cache muda, para invalidar entradas antigas
 # sem precisar limpar o cache na mao.
@@ -71,14 +71,14 @@ CACHE_FORMAT = 1
 WIDTH = 92
 
 _qgis_process_path = None  # cache (apenas resultados positivos)
-_fingerprint = None  # cache em memoria (o stat e barato, mas o run chama varias vezes)
+_fingerprint = None  # cache em memória (o stat e barato, mas o run chama varias vezes)
 
 
 # ---------------------------------------------------------------------------
 # qgis_process
 # ---------------------------------------------------------------------------
 def _version_key(path):
-    """Chave de ordenacao por versao extraida do caminho, p.ex. 'QGIS 3.40.0' deve
+    """Chave de ordenacao por versão extraida do caminho, p.ex. 'QGIS 3.40.0' deve
     vir DEPOIS de 'QGIS 3.8' (a ordenacao lexicografica de string erraria isso)."""
     return tuple(int(n) for n in re.findall(r"\d+", path)[:4])
 
@@ -86,15 +86,15 @@ def _version_key(path):
 def find_qgis_process():
     """Retorna o caminho do executavel/bat do qgis_process, ou None.
 
-    Memoiza apenas resultados positivos: se nao encontrar, volta a procurar na
-    proxima chamada (evita cachear um None permanente — relevante para uso como
-    modulo/testes que definem PTOCONTROLE_QGIS_PROCESS depois do import).
+    Memoiza apenas resultados positivos: se não encontrar, volta a procurar na
+    próxima chamada (evita cachear um None permanente — relevante para uso como
+    módulo/testes que definem PTOCONTROLE_QGIS_PROCESS depois do import).
     """
     global _qgis_process_path
     if _qgis_process_path is not None:
         return _qgis_process_path
 
-    # 1. Override explicito
+    # 1. Override explícito
     env = os.environ.get("PTOCONTROLE_QGIS_PROCESS")
     if env and Path(env).exists():
         _qgis_process_path = env
@@ -107,7 +107,7 @@ def find_qgis_process():
             _qgis_process_path = found
             return found
 
-    # 3. Locais de instalacao mais comuns
+    # 3. Locais de instalação mais comuns
     candidates = []
     if sys.platform.startswith("win"):
         program_dirs = {
@@ -125,7 +125,7 @@ def find_qgis_process():
         candidates += ["/usr/bin/qgis_process", "/usr/local/bin/qgis_process"]
         candidates += glob.glob("/usr/lib/qgis/qgis_process*")
 
-    # Prefere a versao mais nova (por numero de versao real, nao lexicografico).
+    # Prefere a versão mais nova (por número de versão real, não lexicografico).
     for path in sorted(set(candidates), key=_version_key, reverse=True):
         if Path(path).exists():
             _qgis_process_path = path
@@ -143,10 +143,10 @@ def _build_command(qgis_process, args):
 def _qgis4_config_path():
     """Diretorio de configuracao do QGIS 4 (que contem 'profiles'), se existir.
 
-    O qgis_process 4.0 ainda resolve o perfil legado QGIS/QGIS3 por padrao,
+    O qgis_process 4.0 ainda resolve o perfil legado QGIS/QGIS3 por padrão,
     enquanto o QGIS 4 Desktop usa QGIS/QGIS4 — sem redirecionar via
-    QGIS_CUSTOM_CONFIG_PATH, o plugin instalado no perfil real fica invisivel
-    para o qgis_process (lista vazia / provider nao carregado).
+    QGIS_CUSTOM_CONFIG_PATH, o plugin instalado no perfil real fica invisível
+    para o qgis_process (lista vazia / provider não carregado).
     """
     if sys.platform.startswith("win"):
         base = os.environ.get("APPDATA", "")
@@ -215,7 +215,7 @@ def _help_json(alg):
 
 
 def load_annotations():
-    """Conhecimento de dominio opcional (regras/exemplos) por id de algoritmo."""
+    """Conhecimento de domínio opcional (regras/exemplos) por id de algoritmo."""
     if not ANNOTATIONS_PATH.exists():
         return {}
     with open(ANNOTATIONS_PATH, encoding="utf-8") as fh:
@@ -223,7 +223,7 @@ def load_annotations():
 
 
 def _summarize_help(data):
-    """Reduz a saida verbosa do `qgis_process help --json` a um resumo util."""
+    """Reduz a saida verbosa do `qgis_process help --json` a um resumo útil."""
     details = data.get("algorithm_details", {})
     params = []
     for name, p in sorted(data.get("parameters", {}).items()):
@@ -258,12 +258,12 @@ def _summarize_help(data):
 # Cache do contrato (help --json) e da lista, em disco
 #
 # Uma chamada ao qgis_process custa segundos (o QGIS inteiro sobe a cada vez),
-# entao validar o `run` contra o contrato ao vivo dobraria o custo de toda
-# execucao. O contrato so muda quando o QGIS ou o plugin mudam, logo cabe em
-# cache com uma impressao digital barata (stat, sem ler arquivo).
+# então validar o `run` contra o contrato ao vivo dobraria o custo de toda
+# execução. O contrato só muda quando o QGIS ou o plugin mudam, logo cabe em
+# cache com uma impressão digital barata (stat, sem ler arquivo).
 # ---------------------------------------------------------------------------
 def _stat_token(path):
-    """Assinatura barata de um caminho: mtime + tamanho, ou '-' se nao existir."""
+    """Assinatura barata de um caminho: mtime + tamanho, ou '-' se não existir."""
     try:
         st = os.stat(path)
     except OSError:
@@ -272,11 +272,11 @@ def _stat_token(path):
 
 
 def env_fingerprint():
-    """Impressao digital do ambiente que produz o contrato.
+    """Impressão digital do ambiente que produz o contrato.
 
-    Cobre o executavel do qgis_process (troca de versao do QGIS) e a pasta do
-    plugin com o metadata.txt (troca de versao/instalacao do plugin). NAO cobre a
-    edicao de um .py de algoritmo la dentro, porque varrer a arvore a cada `run`
+    Cobre o executavel do qgis_process (troca de versão do QGIS) e a pasta do
+    plugin com o metadata.txt (troca de versão/instalação do plugin). NÃO cobre a
+    edicao de um .py de algoritmo lá dentro, porque varrer a árvore a cada `run`
     custaria mais do que economiza: em desenvolvimento do plugin, use
     `--refresh-cache` ou `cache --clear` depois de mexer na assinatura de um
     algoritmo.
@@ -306,13 +306,13 @@ def cache_dir():
 
 
 def _cache_file(chave):
-    # O id tem ':', que nao e nome de arquivo valido no Windows.
+    # O id tem ':', que não é nome de arquivo válido no Windows.
     safe = re.sub(r"[^A-Za-z0-9_.-]", "_", chave)
     return cache_dir() / f"{safe}.json"
 
 
 def cache_read(chave):
-    """Entrada em cache e ainda valida, ou None."""
+    """Entrada em cache e ainda válida, ou None."""
     try:
         with open(_cache_file(chave), encoding="utf-8") as fh:
             entry = json.load(fh)
@@ -325,11 +325,11 @@ def cache_read(chave):
 
 def cache_write(chave, data):
     """Grava a entrada. Falha de escrita nunca derruba o comando: o cache e
-    otimizacao, e um /tmp somente-leitura nao pode impedir de rodar o algoritmo."""
+    otimização, e um /tmp somente-leitura não pode impedir de rodar o algoritmo."""
     path = _cache_file(chave)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        # Escrita atomica: dois `run` simultaneos nao podem deixar um JSON pela metade.
+        # Escrita atômica: dois `run` simultaneos não podem deixar um JSON pela metade.
         tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(
@@ -360,7 +360,7 @@ def help_json_cached(alg, refresh=False):
 #
 # Os ids seguem a regra do QGIS (alfanumerico minusculo, sem separador), o que os
 # deixa compridos e grudados. Em vez de manter um mapa de apelidos (que seria um
-# catalogo copiado, exatamente o que este desenho existe para evitar), a
+# catálogo copiado, exatamente o que este desenho existe para evitar), a
 # resolucao por prefixo consulta a LISTA VIVA: um nome novo entra sozinho.
 # ---------------------------------------------------------------------------
 def list_algorithms(refresh=False):
@@ -382,23 +382,23 @@ def list_algorithms(refresh=False):
 
 
 def resolve_alg(alg, refresh=False):
-    """Resolve o que o usuario digitou para um id completo 'ptocontrole:nome'.
+    """Resolve o que o usuário digitou para um id completo 'ptocontrole:nome'.
 
-    Ordem: id exato (nao custa consulta), depois prefixo unico contra a lista viva,
-    depois substring unica. Ambiguidade e erro, nunca escolha silenciosa.
+    Ordem: id exato (não custa consulta), depois prefixo único contra a lista viva,
+    depois substring única. Ambiguidade e erro, nunca escolha silenciosa.
     """
     alg = alg.strip()
     if ":" in alg:
         return alg
 
-    # Caminho feliz: o contrato ja esta em cache com esse nome exato, entao nem
+    # Caminho feliz: o contrato já esta em cache com esse nome exato, então nem
     # precisa da lista (que custaria mais uma subida do QGIS).
     if cache_read(full_id(alg)) is not None:
         return full_id(alg)
 
     tabela = list_algorithms(refresh=refresh)
     if not tabela:
-        # Sem lista nao da para resolver; deixa o qgis_process dar o erro dele.
+        # Sem lista não da para resolver; deixa o qgis_process dar o erro dele.
         return full_id(alg)
     if alg in tabela:
         return full_id(alg)
@@ -427,7 +427,7 @@ def resolve_alg(alg, refresh=False):
 
 
 # ---------------------------------------------------------------------------
-# Contrato: formatacao legivel e validacao local
+# Contrato: formatacao legível e validação local
 # ---------------------------------------------------------------------------
 def _param_type(param):
     return (
@@ -447,8 +447,8 @@ def _param_marks(param):
 
 
 def _options_line(param):
-    """'0=Paisagem  1=Retrato' para enum por indice, ou os rotulos aceitos quando o
-    enum usa string estatica. None se o parametro nao for enumerado."""
+    """'0=Paisagem  1=Retrato' para enum por índice, ou os rótulos aceitos quando o
+    enum usa string estatica. None se o parâmetro não for enumerado."""
     options = param.get("available_options")
     if not options:
         return None
@@ -464,7 +464,7 @@ def _option_sort_key(item):
 
 
 def format_param(name, param, indent="  "):
-    """Uma linha por parametro (mais continuacoes para padrao e opcoes)."""
+    """Uma linha por parâmetro (mais continuacoes para padrão e opcoes)."""
     head = f"{indent}{name:<26} {_param_type(param):<10} {_param_marks(param):<22}"
     desc = param.get("description") or ""
     lines = [f"{head} {desc}".rstrip()]
@@ -483,14 +483,14 @@ def format_param(name, param, indent="  "):
 
 
 def _param_sort_key(item):
-    """Obrigatorios de entrada primeiro, depois as saidas obrigatorias, depois os
+    """Obrigatorios de entrada primeiro, depois as saidas obrigatórias, depois os
     opcionais: e a ordem em que um chamador precisa decidir o que passar."""
     name, param = item
     return (bool(param.get("optional", False)), bool(param.get("is_destination")), name)
 
 
 def _enum_indices(value):
-    """Indices de um valor de enum ('1', 1, '1,3', [1, 3]) ou None se nao for indice."""
+    """Indices de um valor de enum ('1', 1, '1,3', [1, 3]) ou None se não for índice."""
     if isinstance(value, bool):
         return None
     if isinstance(value, int):
@@ -511,18 +511,18 @@ def _enum_indices(value):
 
 
 def validate_inputs(inputs, help_data):
-    """Confere os parametros contra o contrato do algoritmo, sem executar nada.
+    """Confere os parâmetros contra o contrato do algoritmo, sem executar nada.
 
-    Devolve uma lista de {"message", "params"}. So checa o que da para afirmar com
+    Devolve uma lista de {"message", "params"}. Só checa o que da para afirmar com
     certeza a partir do contrato; um enum de string estatica, por exemplo, fica de
     fora, porque reprovar por engano e pior do que deixar o qgis_process reclamar.
     """
     params = help_data.get("parameters", {})
     errors = []
 
-    # 1. Nome que nao existe. E o modo de falha mais traicoeiro: o qgis_process
-    # IGNORA a chave desconhecida em silencio, aplica o padrao do parametro que o
-    # chamador queria setar e o erro so aparece la na frente, com outra cara.
+    # 1. Nome que não existe. E o modo de falha mais traicoeiro: o qgis_process
+    # IGNORA a chave desconhecida em silêncio, aplica o padrão do parâmetro que o
+    # chamador queria setar e o erro só aparece lá na frente, com outra cara.
     for key in inputs:
         if key in params:
             continue
@@ -532,8 +532,8 @@ def validate_inputs(inputs, help_data):
             message += f" (talvez: {', '.join(close)})"
         errors.append({"message": message, "params": close})
 
-    # 2. Obrigatorio ausente. Vale tambem para saidas (sink/fileDestination): o
-    # qgis_process nao inventa destino temporario, ele aborta.
+    # 2. Obrigatorio ausente. Vale também para saidas (sink/fileDestination): o
+    # qgis_process não inventa destino temporario, ele aborta.
     for name, param in sorted(params.items(), key=_param_sort_key):
         if param.get("optional", False):
             continue
@@ -543,7 +543,7 @@ def validate_inputs(inputs, help_data):
                 "params": [name],
             })
 
-    # 3. Enum por indice: fora da faixa, ou rotulo passado no lugar do indice.
+    # 3. Enum por índice: fora da faixa, ou rótulo passado no lugar do índice.
     for name, value in inputs.items():
         param = params.get(name)
         if not param:
@@ -572,7 +572,7 @@ def validate_inputs(inputs, help_data):
 
 
 def format_validation_errors(alg, errors, help_data):
-    """Mensagem de reprovacao: o contrato dos parametros citados vem JUNTO, para
+    """Mensagem de reprovação: o contrato dos parâmetros citados vem JUNTO, para
     o chamador poder corrigir sem uma segunda chamada (que custaria segundos)."""
     params = help_data.get("parameters", {})
     out = [f"ERRO: {len(errors)} problema(s) de validacao em {alg} (nada foi executado).", ""]
@@ -595,17 +595,17 @@ def format_validation_errors(alg, errors, help_data):
 
 
 def render_describe(help_data, annotation):
-    """Saida compacta do describe: uma linha por parametro, mais o que so a prosa
-    curada sabe (regra de dominio e exemplo)."""
+    """Saida compacta do describe: uma linha por parâmetro, mais o que só a prosa
+    curada sabe (regra de domínio e exemplo)."""
     details = help_data.get("algorithm_details", {})
     params = help_data.get("parameters", {})
     alg = details.get("id") or "?"
     out = [f"{alg}  |  {details.get('name', '')}  |  grupo: {details.get('group', '')}"]
 
-    # A descricao VIVA, que sai do shortDescription() do proprio algoritmo. Ela vem
-    # antes da prosa curada porque e a que acompanha o plugin sozinha. Atencao: o
-    # `qgis_process help --json` NAO expoe o shortHelpString(), que e o help longo
-    # do painel do QGIS, entao o unico canal vivo de descricao e este.
+    # A descrição VIVA, que sai do shortDescription() do próprio algoritmo. Ela vem
+    # antes da prosa curada porque é a que acompanha o plugin sozinha. Atenção: o
+    # `qgis_process help --json` NÃO expoe o shortHelpString(), que é o help longo
+    # do painel do QGIS, então o único canal vivo de descrição e este.
     if details.get("short_description"):
         out += ["", textwrap.fill(details["short_description"], width=WIDTH)]
     if annotation.get("description"):
@@ -616,8 +616,8 @@ def render_describe(help_data, annotation):
     for name, param in sorted(params.items(), key=_param_sort_key):
         out.append(format_param(name, param))
 
-    # So as saidas que NAO sao parametro (a saida-destino ja saiu acima, marcada
-    # como 'saida'; repeti-la aqui seria dizer duas vezes a mesma coisa).
+    # Só as saidas que NÃO são parâmetro (a saida-destino já saiu acima, marcada
+    # como 'saida'; repeti-lá aqui seria dizer duas vezes a mesma coisa).
     extras = {k: v for k, v in help_data.get("outputs", {}).items() if k not in params}
     if extras:
         out += ["", "Saidas adicionais (nao sao parametro):"]
@@ -655,8 +655,8 @@ def _quote(path):
 def _print_enable_fix(qp):
     """Imprime o conserto do plugin desabilitado.
 
-    O comando so vale se rodar no MESMO perfil que este CLI usa: o qgis_process
-    resolve o perfil legado (QGIS3) por padrao, enquanto o CLI redireciona para o
+    O comando só vale se rodar no MESMO perfil que este CLI usa: o qgis_process
+    resolve o perfil legado (QGIS3) por padrão, enquanto o CLI redireciona para o
     perfil do QGIS 4. Rodar o enable sem essa variavel habilita o plugin no perfil
     errado e o CLI continua sem provider, sem sinal nenhum de que nada mudou.
     """
@@ -671,12 +671,12 @@ def _print_enable_fix(qp):
 
 def _check_provider(qp, fix=False):
     """Confere se o provider ptocontrole esta carregado NO qgis_process e, quando
-    nao esta, devolve o conserto exato.
+    não esta, devolve o conserto exato.
 
-    Este e o modo de falha real: o qgis_process mantem a propria lista de plugins
+    Este e o modo de falha real: o qgis_process mantem a própria lista de plugins
     habilitados, separada da do QGIS Desktop. Com o plugin ativo no Desktop e
     inativo aqui, `list` retorna zero algoritmos com exit 0 e stderr vazio, ou
-    seja, o CLI fica inutil sem reclamar de nada.
+    seja, o CLI fica inútil sem reclamar de nada.
     """
     problems = []
     code, out, err = call_qgis_process(["plugins", "--json"])
@@ -755,7 +755,7 @@ def cmd_doctor(args):
 
 
 def _cache_counts():
-    """(validas, obsoletas) no cache, sem falhar se a pasta nem existir."""
+    """(válidas, obsoletas) no cache, sem falhar se a pasta nem existir."""
     valid = stale = 0
     try:
         files = sorted(cache_dir().glob("*.json"))
@@ -804,7 +804,7 @@ def cmd_list(args):
         print(json.dumps({"algorithms": [k for k, _ in rows]}, indent=2, ensure_ascii=False))
         return 0
     if not rows:
-        # Zero algoritmos com exit 0 e o sintoma de provider nao carregado, nao de
+        # Zero algoritmos com exit 0 e o sintoma de provider não carregado, não de
         # um plugin sem algoritmos: aponta o diagnostico em vez de calar.
         print("Nenhum algoritmo do Ponto de Controle disponivel (o provider nao carregou).")
         print("Rode `pto_controle_cli.py doctor` para ver o conserto exato.")
@@ -827,7 +827,7 @@ def cmd_describe(args):
         print(render_describe(data, annotation))
         return 0
     summary = _summarize_help(data)
-    # Enriquece com o conhecimento de dominio curado, se houver para este id.
+    # Enriquece com o conhecimento de domínio curado, se houver para este id.
     for key in ("description", "constraints", "example"):
         if key in annotation:
             summary[key] = annotation[key]
@@ -840,12 +840,12 @@ _FLOAT_RE = re.compile(r"^-?[0-9]+\.[0-9]+$")
 
 
 def _coerce(value):
-    """Converte tokens 'KEY=VALUE' em numero apenas quando e seguro; senao, string.
+    """Converte tokens 'KEY=VALUE' em número apenas quando e seguro; senao, string.
 
-    So coage inteiros "limpos" (sem zero a esquerda, sem '_', sem 'inf'/'nan', sem
-    notacao exponencial ou hex) e floats decimais simples — assim nao corrompe
+    Só coage inteiros "limpos" (sem zero a esquerda, sem '_', sem 'inf'/'nan', sem
+    notacao exponencial ou hex) e floats decimais simples — assim não corrompe
     strings numericas como '007', '1_000', 'inf' ou identificadores. Para forcar
-    um valor numerico a permanecer string, use --params/--stdin (o JSON preserva os tipos).
+    um valor numérico a permanecer string, use --params/--stdin (o JSON preserva os tipos).
     """
     if _INT_RE.match(value):
         return int(value)
@@ -861,13 +861,13 @@ _BOOL_FALSIDADE = {"false", "0", "no", "nao", "não", "f", "n"}
 def coagir_por_contrato(inputs, help_data):
     """Ajusta os tokens KEY=VALUE ao TIPO que o contrato declara.
 
-    O `_coerce` roda antes de existir contrato, entao ele so sabe distinguir numero
+    O `_coerce` roda antes de existir contrato, então ele só sabe distinguir número
     de texto. Booleano fica de fora, e um `IGN_PROC=false` viraria a string 'false',
-    que e nao-vazia e portanto VERDADEIRA. O parametro faria o oposto do pedido, sem
+    que e não-vazia e portanto VERDADEIRA. O parâmetro faria o oposto do pedido, sem
     erro nenhum. E o mesmo modo de falha da chave desconhecida: silencioso.
 
-    So mexe em string. Quem passou o valor por --params/--stdin ja tem o tipo JSON
-    nativo e nao precisa de adivinhacao.
+    Só mexe em string. Quem passou o valor por --params/--stdin já tem o tipo JSON
+    nativo e não precisa de adivinhacao.
     """
     erros = []
     params = (help_data or {}).get("parameters", {})
@@ -949,8 +949,8 @@ def render_dry_run(alg, inputs, help_data):
         rotulo = ""
         param = params.get(key)
         if param and param.get("available_options"):
-            # Traduz o indice de volta ao rotulo: e a checagem que o chamador
-            # nao tem como fazer de cabeca, e o erro silencioso mais comum.
+            # Traduz o índice de volta ao rótulo: e a checagem que o chamador
+            # não tem como fazer de cabeca, e o erro silencioso mais comum.
             rotulo = param["available_options"].get(str(inputs[key]), "")
             rotulo = f"   -> {rotulo}" if rotulo else ""
         out.append(f"    {key:<26} = {value}{rotulo}")
@@ -968,14 +968,14 @@ def cmd_run(args):
     inputs = _collect_inputs(args)
     alg = resolve_alg(args.algorithm, refresh=args.refresh_cache)
 
-    # Valida ANTES de gastar a execucao. O contrato sai do cache em disco, entao o
-    # custo tipico e de milissegundos, nao de uma segunda subida do QGIS.
+    # Valida ANTES de gastar a execução. O contrato sai do cache em disco, então o
+    # custo tipico e de milissegundos, não de uma segunda subida do QGIS.
     help_data = None
     if not args.no_check:
         help_data, code, _cached = help_json_cached(alg, refresh=args.refresh_cache)
         if help_data is None:
-            # Sem contrato nao da para validar. Abortar aqui esconderia o erro real
-            # do qgis_process, entao avisa e segue: a validacao e rede, nao portao.
+            # Sem contrato não da para validar. Abortar aqui esconderia o erro real
+            # do qgis_process, então avisa e segue: a validação e rede, não portao.
             print(
                 f"AVISO: nao consegui obter o contrato de {alg} (exit {code}); "
                 "seguindo sem validar. Se repetir, rode `pto_controle_cli.py doctor`.",
@@ -983,8 +983,8 @@ def cmd_run(args):
             )
 
     if help_data is not None:
-        # A coercao por tipo vem ANTES da validacao: e ela que transforma a string
-        # 'false' no booleano false, e o que for validado tem de ser o que sera enviado.
+        # A coerção por tipo vem ANTES da validação: e ela que transforma a string
+        # 'false' no booleano false, é o que for validado tem de ser o que será enviado.
         errors = coagir_por_contrato(inputs, help_data)
         errors += validate_inputs(inputs, help_data)
         if errors:
@@ -1014,7 +1014,7 @@ def cmd_run(args):
             for key, value in results.items():
                 print(f"\n[OK] {key} -> {value}", file=sys.stderr)
     else:
-        # Sucesso sem 'results' (ex.: algoritmos de efeito colateral) tambem e valido.
+        # Sucesso sem 'results' (ex.: algoritmos de efeito colateral) também e válido.
         print(json.dumps(data, indent=2, ensure_ascii=False))
     if err.strip():
         sys.stderr.write(err)

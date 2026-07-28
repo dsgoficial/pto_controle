@@ -123,8 +123,8 @@ class HandleUpdateFieldWithPathFiles():
             return f"Processamento Concluído. {self.atualizados} ponto(s) atualizado(s)."
         except Exception as erro:
             # Antes havia um `except:` nu que devolvia sempre "o database precisa
-            # ser atualizado com as colunas dos paths". Com a missao vinda da
-            # semente essas colunas SEMPRE existem, entao a mensagem seria falsa e
+            # ser atualizado com as colunas dos paths". Com a missão vinda da
+            # semente essas colunas SEMPRE existem, então a mensagem seria falsa e
             # esconderia a causa real. Agora o erro aparece.
             self.conn.rollback()
             return f"Falhou ao gravar os caminhos: {type(erro).__name__}: {erro}"

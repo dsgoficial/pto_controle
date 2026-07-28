@@ -1,36 +1,42 @@
 # -*- coding: utf-8 -*-
-"""Cria o GeoPackage da missao a partir do MESMO new_db.sql que criava o PostGIS.
+"""Cria o GeoPackage da missão a partir do MESMO new_db.sql que criava o PostGIS.
 
-Por que traduzir em tempo de execucao, e nao manter um .sql de GeoPackage ao lado:
-o schema do ponto de controle e um so. Dois arquivos com as mesmas 19 tabelas
-divergiriam no primeiro campo novo que alguem acrescentasse em um deles, e a
-divergencia seria silenciosa. Aqui o `new_db.sql` continua sendo a unica fonte, e
-o teste `test_schema_gpkg.py` confere tabela a tabela e coluna a coluna que a
-traducao nao perdeu nada.
+O `new_db.sql` continua sendo a única fonte do schema. Manter um `.sql` de
+GeoPackage ao lado dele criaria dois arquivos com as mesmas 19 tabelas, que
+divergiriam no primeiro campo novo que alguém acrescentasse em um só, e a
+divergência seria silenciosa.
 
-O que a traducao faz, e por que:
+A tradução roda quando alguém GERA a semente, e não em campo. O P01 apenas copia
+a semente versionada, então o interpretador de SQL nunca roda na máquina de quem
+está medindo ponto. O teste `test_schema_gpkg.py` confere tabela a tabela e
+coluna a coluna que a semente corresponde ao `new_db.sql`.
 
-- `dominios.X` vira `dominios_X` e `bpc.X` vira `X`. GeoPackage nao tem schema.
-  O prefixo `bpc.` cai porque e ele que da o nome das CAMADAS que o usuario ve no
-  QGIS, e `ponto_controle_p` e o nome que os algoritmos P08, P14 e P15 ja esperam.
-- `SERIAL NOT NULL PRIMARY KEY` vira `INTEGER PRIMARY KEY AUTOINCREMENT`, que e o
-  que o GDAL reconhece como identificador de feicao.
+O que a tradução faz, e por quê:
+
+- `dominios.X` vira `dominios_X` e `bpc.X` vira `X`. GeoPackage não tem schema.
+  O prefixo `bpc.` cai porque é ele que dá o nome das CAMADAS que o usuário vê no
+  QGIS, e `ponto_controle_p` é o nome que os algoritmos P08, P14 e P15 já esperam.
+- `SERIAL NOT NULL PRIMARY KEY` vira `INTEGER PRIMARY KEY AUTOINCREMENT`, que é o
+  que o GDAL reconhece como identificador de feição.
 - `VARCHAR(n)` vira `TEXT`. O GDAL avisa "Field format 'VARCHAR(255)' not
-  supported" e o tipo canonico do GeoPackage e TEXT.
+  supported", e o tipo canônico do GeoPackage é TEXT.
+- `TIMESTAMP WITH TIME ZONE` vira `DATETIME`. Sem isso o SQLite aceita a coluna e
+  o GDAL a IGNORA: ela existe no arquivo e some no QGIS. Foi o que aconteceu com
+  inicio_rastreio e fim_rastreio, medido em 2026-07-28.
 - `geometry(TIPO,4674)` vira a coluna de geometria, registrada no
   `gpkg_geometry_columns`. O `POINTZ` vira POINT com z=1.
 - Some o `CREATE EXTENSION`, o `CREATE SCHEMA`, o `ALTER TABLE ... OWNER TO`, o
-  indice GiST (o GeoPackage usa RTree) e a tabela `public.layer_styles`, que no
-  GeoPackage tem mecanismo proprio.
+  índice GiST (o GeoPackage usa RTree) e a tabela `public.layer_styles`, que no
+  GeoPackage tem mecanismo próprio.
 
-SMALLINT, FLOAT, REAL, DATE, TIME e BOOLEAN atravessam intactos: sao tipos
-validos de GeoPackage.
+SMALLINT, FLOAT, REAL, DATE, TIME e BOOLEAN atravessam intactos: são tipos
+válidos de GeoPackage.
 
-ARMADILHA que vale registrar: a chave estrangeira do GeoPackage e da CONEXAO, e
-nao do servidor. Ela so e verificada com `PRAGMA foreign_keys=ON`, que este modulo
-liga em toda escrita. Uma sessao de edicao do QGIS sobre a camada NAO liga, entao
-editar o atributo a mao pode gravar codigo de dominio inexistente. No PostgreSQL
-isso era impossivel. Medido em 2026-07-28.
+ARMADILHA que vale registrar: a chave estrangeira do GeoPackage é da CONEXÃO, e
+não do servidor. Ela só é verificada com `PRAGMA foreign_keys=ON`, que este módulo
+liga em toda escrita. Uma sessão de edição do QGIS sobre a camada NÃO liga, então
+editar o atributo à mão pode gravar código de domínio inexistente. No PostgreSQL
+isso era impossível. Medido em 2026-07-28.
 """
 import hashlib
 import re
@@ -45,7 +51,7 @@ SEMENTE = AQUI / "missao_semente.gpkg"
 
 SRID = 4674
 
-# Linhas inteiras que nao atravessam.
+# Linhas inteiras que não atravessam.
 RE_DESCARTE = re.compile(
     r"^\s*(CREATE\s+EXTENSION|CREATE\s+SCHEMA|ALTER\s+TABLE\s+\S+\s+OWNER\s+TO"
     r"|CREATE\s+INDEX)\b",
@@ -55,7 +61,7 @@ RE_DESCARTE = re.compile(
 RE_GEOM = re.compile(r"\bgeometry\(\s*(\w+)\s*,\s*(\d+)\s*\)", re.IGNORECASE)
 RE_SERIAL = re.compile(r"\bSERIAL\s+NOT\s+NULL\s+PRIMARY\s+KEY\b", re.IGNORECASE)
 RE_VARCHAR = re.compile(r"\bVARCHAR\s*\(\s*\d+\s*\)", re.IGNORECASE)
-# `TIMESTAMP WITH TIME ZONE` nao e tipo de GeoPackage. Escrito assim, o SQLite
+# `TIMESTAMP WITH TIME ZONE` não é tipo de GeoPackage. Escrito assim, o SQLite
 # aceita a coluna e o GDAL a IGNORA: ela existe no arquivo e some no QGIS. Foi o
 # que aconteceu com inicio_rastreio e fim_rastreio, medido em 2026-07-28.
 RE_TIMESTAMP = re.compile(
@@ -75,7 +81,7 @@ def _renomeia(texto):
 
 
 def _corta_comentario(linha):
-    """Tira o comentario `--` que nao esteja dentro de aspas simples."""
+    """Tira o comentario `--` que não esteja dentro de aspas simples."""
     fora = True
     for i, ch in enumerate(linha):
         if ch == "'":
@@ -89,9 +95,9 @@ def separa_comandos(sql):
     """Quebra o script em comandos.
 
     Respeita a aspa simples E o `$$` do corpo plpgsql. Sem tratar o `$$`, o corpo
-    da funcao `atualizar_controle_medicao` (que tem `;` em toda linha) e picado em
+    da função `atualizar_controle_medicao` (que tem `;` em toda linha) e picado em
     fragmentos, e o fragmento final gruda no CREATE TABLE seguinte. Foi assim que a
-    tabela `public.layer_styles` escapou do descarte na primeira versao.
+    tabela `public.layer_styles` escapou do descarte na primeira versão.
     """
     comandos, atual, fora_aspa, fora_cifrao = [], [], True, True
     for linha in sql.splitlines():
@@ -119,7 +125,7 @@ def traduz(sql):
     """Devolve (comandos_ddl, comandos_insert, espaciais).
 
     `espaciais` e {tabela: (tipo_geom, tem_z)}, o que o registro do GeoPackage
-    precisa saber e que o DDL sozinho nao diz.
+    precisa saber e que o DDL sozinho não diz.
     """
     ddl, inserts, espaciais = [], [], {}
 
@@ -128,15 +134,15 @@ def traduz(sql):
 
         alvo_insert = re.match(r"^\s*INSERT\s+INTO\s+(\w+)\.(\w+)", bruto, re.IGNORECASE)
         if alvo_insert:
-            # O schema `public` guarda so o layer_styles, que no GeoPackage tem
-            # mecanismo proprio. Nada dele atravessa.
+            # O schema `public` guarda só o layer_styles, que no GeoPackage tem
+            # mecanismo próprio. Nada dele atravessa.
             if alvo_insert.group(1).lower() != "public":
                 inserts.append(_renomeia(bruto))
             continue
 
         m = RE_CREATE_TABLE.search(bruto)
         if not m:
-            continue  # funcao, trigger e o que mais nao atravessa
+            continue  # função, trigger é o que mais não atravessa
         if m.group("esquema").lower() == "public":
             continue
 
@@ -151,8 +157,8 @@ def traduz(sql):
                 tipo = g.group(1).upper()
                 tem_z = tipo.endswith("Z")
                 espaciais[tabela] = (tipo[:-1] if tem_z else tipo, tem_z)
-                # A coluna de geometria do GeoPackage nao leva NOT NULL: o GDAL
-                # escreve a feicao antes da geometria em alguns caminhos.
+                # A coluna de geometria do GeoPackage não leva NOT NULL: o GDAL
+                # escreve a feição antes da geometria em alguns caminhos.
                 linha = RE_GEOM.sub(espaciais[tabela][0], linha)
                 linha = re.sub(r"\s+NOT\s+NULL", "", linha, flags=re.IGNORECASE)
             linha = RE_SERIAL.sub("INTEGER PRIMARY KEY AUTOINCREMENT", linha)
@@ -166,7 +172,7 @@ def traduz(sql):
 
 
 def _registra(con, tabela, espaciais):
-    """Poe a tabela no catalogo do GeoPackage. Sem isso o GDAL nao a enxerga."""
+    """Poe a tabela no catálogo do GeoPackage. Sem isso o GDAL não a enxerga."""
     if tabela in espaciais:
         tipo, tem_z = espaciais[tabela]
         con.execute(
@@ -191,9 +197,9 @@ def _registra(con, tabela, espaciais):
 def digital_do_sql(fonte_sql=None):
     """sha256 do new_db.sql, gravado dentro da semente.
 
-    A guarda de atualidade NAO pode ser por data de arquivo: num clone novo o git
-    escreve todos os arquivos no mesmo instante, e a comparacao de mtime aprovaria
-    uma semente velha. A impressao digital do CONTEUDO atravessa o clone.
+    A guarda de atualidade NÃO pode ser por data de arquivo: num clone novo o git
+    escreve todos os arquivos no mesmo instante, e a comparação de mtime aprovaria
+    uma semente velha. A impressão digital do CONTEUDO atravessa o clone.
     """
     caminho = fonte_sql or FONTE_SQL
     return hashlib.sha256(caminho.read_bytes()).hexdigest()
@@ -202,10 +208,10 @@ def digital_do_sql(fonte_sql=None):
 def gerar_semente(caminho, fonte_sql=None):
     """Gera a SEMENTE, a partir do new_db.sql. Devolve (tabelas, linhas_de_dominio).
 
-    Isto e ferramenta de manutencao, e nao roda em campo. Quem mexer no
+    Isto é ferramenta de manutenção, e não roda em campo. Quem mexer no
     `new_db.sql` roda `python -m createDB.gpkg_schema` (ou o teste, que avisa) e
-    commita a semente nova. O P01 so COPIA a semente, entao o parser de SQL nunca
-    roda na maquina de quem esta medindo ponto.
+    commita a semente nova. O P01 só COPIA a semente, então o parser de SQL nunca
+    roda na máquina de quem esta medindo ponto.
     """
     from osgeo import ogr, osr
 
@@ -221,10 +227,10 @@ def gerar_semente(caminho, fonte_sql=None):
     ddl, inserts, espaciais = traduz(sql)
 
     # O GDAL semeia gpkg_contents, gpkg_spatial_ref_sys e companhia. A camada
-    # semente existe so para o SRID 4674 entrar no gpkg_spatial_ref_sys, e sai
-    # logo em seguida. Quem a remove e o proprio OGR: apagar a linha do
-    # gpkg_contents na mao viola a chave estrangeira do catalogo, que aponta do
-    # gpkg_geometry_columns para ele, e ainda deixaria as tabelas do RTree orfas.
+    # semente existe só para o SRID 4674 entrar no gpkg_spatial_ref_sys, e sai
+    # logo em seguida. Quem a remove e o próprio OGR: apagar a linha do
+    # gpkg_contents na mao viola a chave estrangeira do catálogo, que aponta do
+    # gpkg_geometry_columns para ele, e ainda deixaria as tabelas do RTree órfãs.
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(SRID)
     fonte = ogr.GetDriverByName("GPKG").CreateDataSource(str(destino))
@@ -247,10 +253,10 @@ def gerar_semente(caminho, fonte_sql=None):
             _registra(con, m.group(1), espaciais)
         for comando in inserts:
             con.execute(comando)
-        # A impressao digital do new_db.sql viaja DENTRO da semente. E ela que o
-        # P01 confere antes de copiar, para nao entregar uma missao com schema
+        # A impressão digital do new_db.sql viaja DENTRO da semente. E ela que o
+        # P01 confere antes de copiar, para não entregar uma missão com schema
         # velho. Semente defasada e pior que semente ausente: responde com
-        # confianca um schema que ja mudou.
+        # confiança um schema que já mudou.
         con.execute(
             "CREATE TABLE pto_controle_semente ("
             " chave TEXT NOT NULL PRIMARY KEY, valor TEXT NOT NULL)"
@@ -281,10 +287,10 @@ def gerar_semente(caminho, fonte_sql=None):
 
 
 def criar_missao(destino, semente=None):
-    """Cria o GeoPackage de uma missao COPIANDO a semente. E o que o P01 faz.
+    """Cria o GeoPackage de uma missão COPIANDO a semente. É o que o P01 faz.
 
     Copiar em vez de traduzir tem duas vantagens que importam em campo: e
-    instantaneo, e nao depende de interpretar SQL na maquina de quem esta medindo.
+    instantaneo, e não depende de interpretar SQL na máquina de quem esta medindo.
     Antes de copiar, confere que a semente corresponde ao `new_db.sql` de hoje.
     """
     origem = Path(semente or SEMENTE)
@@ -325,16 +331,16 @@ def criar_missao(destino, semente=None):
 
 
 def conecta(caminho):
-    """Conexao com a FK LIGADA. Use sempre esta, nunca o sqlite3.connect cru:
-    sem o PRAGMA a chave estrangeira nao e verificada e o codigo de dominio
-    invalido entra calado."""
+    """Conexão com a FK LIGADA. Use sempre esta, nunca o sqlite3.connect cru:
+    sem o PRAGMA a chave estrangeira não é verificada e o código de domínio
+    inválido entra calado."""
     con = sqlite3.connect(str(caminho))
     con.execute("PRAGMA foreign_keys=ON")
     return con
 
 
 if __name__ == "__main__":
-    # Ferramenta de manutencao: regera a semente depois de mexer no new_db.sql.
+    # Ferramenta de manutenção: regera a semente depois de mexer no new_db.sql.
     if SEMENTE.exists():
         print(f"A semente ja existe: {SEMENTE}")
         print("Apague-a de proposito antes de gerar a nova.")

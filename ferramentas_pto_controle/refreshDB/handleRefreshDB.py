@@ -84,15 +84,15 @@ class HandleRefreshDB():
         return points
 
     def upsert(self, points):
-        """Grava os pontos na missao. Devolve (resumo, avisos).
+        """Grava os pontos na missão. Devolve (resumo, avisos).
 
         O `upsert_ponto` espelha o `ON CONFLICT ... WHERE tipo_situacao IN
-        (1,2,4,9999)` que existia no PostGIS: ponto ja APROVADO nao se sobrescreve
+        (1,2,4,9999)` que existia no PostGIS: ponto já APROVADO não se sobrescreve
         por recarga de pasta.
 
-        A chave que a tabela nao tem deixa de entrar CALADA. Antes ela ia direto
+        A chave que a tabela não tem deixa de entrar CALADA. Antes ela ia direto
         para o SQL e derrubava a carga (ou pior, casava com outra coluna); agora
-        ela e descartada e RELATADA, que e o gesto que este vault ja pagou caro
+        ela é descartada e RELATADA, que é o gesto que este vault já pagou caro
         para aprender.
         """
         resumo = {'inseridos': 0, 'atualizados': 0, 'preservados': 0}
@@ -124,7 +124,7 @@ class HandleRefreshDB():
         return resumo, avisos
 
     def recontar(self):
-        """A recontagem que era trigger no PostGIS. Aqui e explicita e por lote."""
+        """A recontagem que era trigger no PostGIS. Aqui e explícita e por lote."""
         tocados = recontar_controle_medicao(self.conn)
         self.conn.commit()
         return tocados
@@ -197,14 +197,14 @@ def createTimeStamp(points):
     """Monta inicio_rastreio e fim_rastreio no DATETIME do GeoPackage.
 
     Antes saia '2022-07-03 09:05 -3', que e literal de timestamptz do PostgreSQL e
-    so o PostgreSQL entende.
+    só o PostgreSQL entende.
 
     O GeoPackage exige o ISO 8601 em UTC, com milissegundos e 'Z'
     ('2022-07-03T12:05:00.000Z'). Escrever com deslocamento local
     ('...-03:00') faz o GDAL avisar "non-conformant content, successfully
     parsed": ele aceita hoje, e tolerancia assim e o tipo de coisa que vira erro
-    numa versao seguinte. A hora do medidor vem no fuso dele (coluna
-    fuso_horario, padrao -3) e e convertida aqui.
+    numa versão seguinte. A hora do medidor vem no fuso dele (coluna
+    fuso_horario, padrão -3) e e convertida aqui.
     """
     for point in points:
         fuso = point.pop('fuso_horario', -3)
@@ -214,7 +214,7 @@ def createTimeStamp(points):
             horas = -3
         for campo in ('inicio_rastreio', 'fim_rastreio'):
             hora = str(point[campo]).strip()
-            if len(hora) == 5:  # HH:MM, que e o que o CSV do medidor traz
+            if len(hora) == 5:  # HH:MM, que é o que o CSV do medidor traz
                 hora += ':00'
             local = datetime.strptime(
                 '{} {}'.format(point['data_rastreio'], hora), '%Y-%m-%d %H:%M:%S'

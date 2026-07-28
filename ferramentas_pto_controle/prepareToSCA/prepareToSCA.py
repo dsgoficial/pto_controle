@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""P17: prepara a missao inteira para importacao no Controle do Acervo (SCA).
+"""P17: prepara a missão inteira para importacao no Controle do Acervo (SCA).
 
 Irmao do P10, e o contrario dele em quase tudo. O P10 monta o pacote MENOR, que
-vai ao BPC da DSG: quatro arquivos por ponto, renomeados, so de ponto com orbita
-final, sem ponto base. Aqui vai o pacote COMPLETO, que e o que o acervo guarda:
+vai ao BPC da DSG: quatro arquivos por ponto, renomeados, só de ponto com órbita
+final, sem ponto base. Aqui vai o pacote COMPLETO, que é o que o acervo guarda:
 a pasta inteira de cada ponto, com as oito subpastas, sem filtro nenhum.
 
 Medido na amostra do repositorio: o pacote do BPC custa cerca de 1,4 MB por ponto
-e a missao completa cerca de 13,7 MB, dos quais 78% sao as fotos de rastreio.
+e a missão completa cerca de 13,7 MB, dos quais 78% são as fotos de rastreio.
 """
 import re
 import shutil
@@ -20,7 +20,7 @@ from qgis.core import (QgsProcessingAlgorithm,
                        QgsProcessingParameterFolderDestination)
 from qgis.PyQt.QtCore import QCoreApplication
 
-# Mesma forma de codigo que o resto do plugin reconhece: UF-HV-1234, e as bases.
+# Mesma forma de código que o resto do plugin reconhece: UF-HV-1234, e as bases.
 RE_PONTO = re.compile(r"^([A-Z]{2})-(HV|Base|BASE)-[0-9]+$")
 
 
@@ -75,8 +75,8 @@ class PrepareToSCA(QgsProcessingAlgorithm):
                 break
             feedback.setProgress(i * 100 / len(pontos))
             destino = pasta_out / f'{ponto.name}.zip'
-            # Sem filtro de orbita e sem descartar ponto base, ao contrario do
-            # P10: o acervo guarda a missao como ela foi medida.
+            # Sem filtro de órbita e sem descartar ponto base, ao contrario do
+            # P10: o acervo guarda a missão como ela foi medida.
             arquivos = self._zipar_ponto(ponto, destino)
             tamanho = destino.stat().st_size
             total_bytes += tamanho
@@ -101,10 +101,10 @@ class PrepareToSCA(QgsProcessingAlgorithm):
         """Compacta a pasta INTEIRA do ponto. Devolve quantos arquivos entraram.
 
         Preservar o caminho relativo importa: e por ele que a importacao sabe que
-        um .jpg veio de 3_Foto_Rastreio e nao de 7_Imagens_Monografia.
+        um .jpg veio de 3_Foto_Rastreio e não de 7_Imagens_Monografia.
 
-        Devolve a CONTAGEM, e nao a soma dos tamanhos. Quem chama mede o zip no
-        disco, que e o numero que importa para transferir. Reportar a soma dos
+        Devolve a CONTAGEM, e não a soma dos tamanhos. Quem chama mede o zip no
+        disco, que é o número que importa para transferir. Reportar a soma dos
         arquivos daria um valor maior que o arquivo gerado, o que confunde.
         """
         if destino.exists():

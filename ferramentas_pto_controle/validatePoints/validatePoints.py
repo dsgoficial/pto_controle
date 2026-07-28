@@ -222,7 +222,7 @@ class ValidatePoints(QgsProcessingAlgorithm):
 
 class ValidationString(QgsProcessingParameterString):
     '''
-    Auxiliary class for pre validation on measurer's names.
+    Auxiliary class for pré validation on measurer's names.
     '''
     # __init__ not necessary
 
@@ -236,7 +236,7 @@ class ValidationString(QgsProcessingParameterString):
 
 class ValidationDate(QgsProcessingParameterString):
     '''
-    Auxiliary class for pre validation on dates.
+    Auxiliary class for pré validation on dates.
     '''
     # __init__ not necessary
 
@@ -250,7 +250,7 @@ class ValidationDate(QgsProcessingParameterString):
 
 class ValidationJSON(QgsProcessingParameterFile):
     '''
-    Auxiliary class for pre validation on dates.
+    Auxiliary class for pré validation on dates.
     '''
 
     def checkValueIsAcceptable(self, value, context=None):

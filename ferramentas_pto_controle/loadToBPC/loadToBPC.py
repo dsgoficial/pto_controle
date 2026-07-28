@@ -47,8 +47,8 @@ from .handleLoadToBPC import HandleLoadToBPC
 def _cpf_so_digitos(valor):
     """O que o `regexp_replace(cpf, '\\D','','g')` do PostGIS fazia.
 
-    O SQLite nao tem regexp_replace, entao a limpeza vem para o Python. Devolve
-    None quando nao sobra digito, que e o `NULLIF(..., '')` do original.
+    O SQLite não tem regexp_replace, então a limpeza vem para o Python. Devolve
+    None quando não sobra digito, que é o `NULLIF(..., '')` do original.
     """
     if not valor:
         return None
@@ -59,9 +59,9 @@ def _cpf_so_digitos(valor):
 def _tempo_rastreio(inicio, fim):
     """O que o `(fim_rastreio - inicio_rastreio)` do PostGIS fazia.
 
-    ARMADILHA que motiva esta funcao: no SQLite a subtracao de duas colunas de
-    texto nao da erro, da ZERO. O tempo de rastreio iria zerado para o BPC sem
-    ninguem notar. Medido em 2026-07-28.
+    ARMADILHA que motiva esta função: no SQLite a subtracao de duas colunas de
+    texto não da erro, da ZERO. O tempo de rastreio iria zerado para o BPC sem
+    ninguém notar. Medido em 2026-07-28.
 
     Devolve HH:MM:SS, ou None quando falta uma das pontas.
     """
@@ -88,10 +88,10 @@ def exportar_para_bpc(missao, sql, destino):
     """Escreve o GeoPackage que vai ao BPC. Devolve quantos pontos sairam.
 
     Substitui a chamada ao `ogr2ogr` contra o PostGIS. Duas expressoes do SQL
-    antigo nao atravessam para o SQLite e foram para o Python: a limpeza do CPF
-    (nao ha regexp_replace) e o tempo de rastreio (a subtracao devolveria zero em
-    silencio). O resto do SELECT continua sendo SQL, para a lista de colunas e os
-    apelidos permanecerem os mesmos que o BPC ja espera.
+    antigo não atravessam para o SQLite e foram para o Python: a limpeza do CPF
+    (não ha regexp_replace) e o tempo de rastreio (a subtracao devolveria zero em
+    silêncio). O resto do SELECT continua sendo SQL, para a lista de colunas e os
+    apelidos permanecerem os mesmos que o BPC já espera.
     """
     from osgeo import ogr, osr
 
@@ -111,7 +111,7 @@ def exportar_para_bpc(missao, sql, destino):
     ds = ogr.GetDriverByName('GPKG').CreateDataSource(str(destino))
     layer = ds.CreateLayer('pontos_exportados', srs, ogr.wkbPoint)
 
-    # As colunas de saida sao as do SELECT, menos as duas cruas que viram
+    # As colunas de saida são as do SELECT, menos as duas cruas que viram
     # calculadas aqui, mais os dois campos derivados.
     cruas = {'cpf_engenheiro_responsavel', 'inicio_rastreio', 'fim_rastreio', 'geom'}
     colunas = [c for c in (linhas[0].keys() if linhas else []) if c not in cruas]

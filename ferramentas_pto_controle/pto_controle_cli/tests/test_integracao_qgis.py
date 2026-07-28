@@ -2,12 +2,12 @@
 """
 Testes que precisam do QGIS instalado, com o plugin habilitado PARA O qgis_process.
 
-Pulam sozinhos quando o qgis_process nao esta ao alcance, entao rodam na maquina de
-quem desenvolve e nao quebram um CI sem QGIS. Sao caros: cada chamada sobe o QGIS
-inteiro (segundos), por isso sao poucos e o contrato fica em cache entre eles.
+Pulam sozinhos quando o qgis_process não esta ao alcance, então rodam na máquina de
+quem desenvolve e não quebram um CI sem QGIS. Sao caros: cada chamada sobe o QGIS
+inteiro (segundos), por isso são poucos e o contrato fica em cache entre eles.
 
 Rodam contra o provider REAL, nunca contra mock. E o ponto do desenho: o valor de
-ler o contrato ao vivo e nao ter copia, e testar contra copia testaria justamente a
+ler o contrato ao vivo e não ter copia, e testar contra copia testaria justamente a
 copia. Quando o plugin mudar, estes testes quebram, e e esse o alarme.
 
 Rodar:
@@ -23,7 +23,7 @@ import pytest
 
 TESTS_DIR = Path(__file__).resolve().parent
 CLI_DIR = TESTS_DIR.parent
-# O CLI mora dentro do pacote do plugin, entao o plugin e a pasta de cima.
+# O CLI mora dentro do pacote do plugin, então o plugin e a pasta de cima.
 PLUGIN = CLI_DIR.parent
 
 _spec = importlib.util.spec_from_file_location("pto_controle_cli_integracao", CLI_DIR / "pto_controle_cli.py")
@@ -37,11 +37,11 @@ needs_qgis = pytest.mark.skipif(
 
 
 def _python_do_qgis():
-    """Interpretador que TEM o modulo `qgis`, ao lado do qgis_process, ou None.
+    """Interpretador que TEM o módulo `qgis`, ao lado do qgis_process, ou None.
 
-    O CLI roda em qualquer python de proposito, e o python da suite tambem. Importar
-    `qgis` exige o interpretador do QGIS, que nao tem pytest instalado. Em vez de
-    pedir instalacao na maquina de quem desenvolve, os testes que precisam do modulo
+    O CLI roda em qualquer python de propósito, e o python da suite também. Importar
+    `qgis` exige o interpretador do QGIS, que não tem pytest instalado. Em vez de
+    pedir instalação na máquina de quem desenvolve, os testes que precisam do módulo
     delegam a checagem a um subprocesso deste interpretador.
     """
     qp = cli.find_qgis_process()
@@ -61,7 +61,7 @@ needs_qgis_python = pytest.mark.skipif(
 
 
 def _ids_do_fonte():
-    """Ids que o FONTE declara, lidos por ast. A referencia contra a qual se compara
+    """Ids que o FONTE declara, lidos por ast. A referência contra a qual se compara
     o que o QGIS realmente carregou."""
     ids = set()
     for caminho in sorted(p for p in PLUGIN.rglob("*.py") if CLI_DIR not in p.parents):
@@ -93,14 +93,14 @@ def tabela():
 
 @needs_qgis
 def test_o_provider_carrega_todos_os_algoritmos_do_fonte(tabela):
-    """Pega os dois lados: algoritmo no fonte que o QGIS nao carregou (erro de import
+    """Pega os dois lados: algoritmo no fonte que o QGIS não carregou (erro de import
     ou addAlgorithm esquecido) e algoritmo no QGIS que sumiu do fonte."""
     assert set(tabela) == _ids_do_fonte()
 
 
 @needs_qgis
 def test_todo_id_e_invocavel_sem_aspas(tabela):
-    """A razao de existir do conserto de 2026-07-28: id com espaco ou acento nao se
+    """A razao de existir do conserto de 2026-07-28: id com espaço ou acento não se
     escreve numa linha de comando nem numa documentacao."""
     for nome in tabela:
         assert re.match(r"^[a-z0-9]+$", nome), f"id nao invocavel: {nome!r}"
@@ -108,10 +108,10 @@ def test_todo_id_e_invocavel_sem_aspas(tabela):
 
 @needs_qgis
 def test_o_rotulo_humano_sobreviveu(tabela):
-    """O titulo numerado e o que o usuario do QGIS Desktop ve e o que casa com o
-    P01..P16 do manual. Ele mora no displayName, e e o que o `list` mostra."""
+    """O título numerado é o que o usuário do QGIS Desktop ve é o que casa com o
+    P01..P16 do manual. Ele mora no displayName, e é o que o `list` mostra."""
     for nome, rotulo in tabela.items():
-        assert re.match(r"^\d{2} - ", rotulo), f"{nome}: rotulo inesperado {rotulo!r}"
+        assert re.match(r"^\d{2} - ", rotulo), f"{nome}: rótulo inesperado {rotulo!r}"
 
 
 @needs_qgis
@@ -124,7 +124,7 @@ def test_describe_devolve_contrato_de_verdade(tabela):
     params = data.get("parameters", {})
     assert params, "contrato sem parametros"
     # Desde a troca do PostgreSQL pelo GeoPackage, o P01 recebe um destino de
-    # arquivo e mais nada. Nao se afirma o NOME do parametro aqui, que e do
+    # arquivo e mais nada. Não se afirma o NOME do parâmetro aqui, que e do
     # contrato vivo; afirma-se que ha uma saida de arquivo.
     assert any(p.get("is_destination") for p in params.values()), (
         f"esperava um parametro de saida em {alg}; achei {sorted(params)}"
@@ -133,12 +133,12 @@ def test_describe_devolve_contrato_de_verdade(tabela):
 
 @needs_qgis
 def test_nenhum_algoritmo_pede_segredo(tabela):
-    """Desde a troca do PostgreSQL pelo GeoPackage, a missao e um arquivo e nenhum
+    """Desde a troca do PostgreSQL pelo GeoPackage, a missão e um arquivo e nenhum
     algoritmo recebe senha. O guardrail de segredo do CLI foi REMOVIDO por isso.
 
-    Esta guarda fica: se um parametro de senha ou token voltar, alguem
+    Esta guarda fica: se um parâmetro de senha ou token voltar, alguém
     reintroduziu credencial na linha de comando, e o guardrail precisa voltar
-    junto. Aqui o alarme custa uma regex, e nao um modulo inteiro de codigo morto.
+    junto. Aqui o alarme custa uma regex, e não um módulo inteiro de código morto.
     """
     parece_segredo = re.compile(r"senha|password|passwd|secret|token", re.IGNORECASE)
     achados = []
@@ -157,10 +157,10 @@ def test_nenhum_algoritmo_pede_segredo(tabela):
 
 @needs_qgis
 def test_todo_algoritmo_tem_descricao_viva(tabela):
-    """O `qgis_process help --json` NAO expoe o shortHelpString(), que e o help
-    longo do painel do QGIS. O unico canal de descricao que chega ao headless e o
+    """O `qgis_process help --json` NÃO expoe o shortHelpString(), que é o help
+    longo do painel do QGIS. O único canal de descrição que chega ao headless e o
     shortDescription(). Sem ele o `describe` sai sem uma linha do que o algoritmo
-    faz, e ninguem percebe: o autor ve o texto na GUI e supoe que o CLI tambem ve.
+    faz, e ninguém percebe: o autor ve o texto na GUI e supoe que o CLI também ve.
     """
     sem_descricao = []
     for nome in sorted(tabela):
@@ -196,7 +196,7 @@ def test_prefixo_ambiguo_e_erro_e_nao_escolha_silenciosa(tabela):
 
 @needs_qgis
 def test_dry_run_reprova_corpo_invalido_sem_executar(tabela):
-    """O portao que economiza a execucao cara. Codigo 2 e 'nada foi executado'."""
+    """O portao que economiza a execução cara. Código 2 e 'nada foi executado'."""
     if "criarbanco" not in tabela:
         pytest.skip("criarbanco nao esta na lista")
     argv = ["run", "criarbanco", "PARAMETRO_QUE_NAO_EXISTE=1", "--dry-run"]
@@ -207,24 +207,24 @@ def test_dry_run_reprova_corpo_invalido_sem_executar(tabela):
 # Enum do Qt: o que a migracao para Qt6 deixou para tras
 #
 # Achado em 2026-07-28, pelo chefe, abrindo um algoritmo na caixa de ferramentas:
-# `QLineEdit.Password` nao existe em Qt6 (virou `QLineEdit.EchoMode.Password`) e
+# `QLineEdit.Password` não existe em Qt6 (virou `QLineEdit.EchoMode.Password`) e
 # derruba a janela de TODO algoritmo com senha. O `metadata.txt` declarava
-# `supportsQt6=True` desde 2026-03-10, mas a declaracao nao migra codigo.
+# `supportsQt6=True` desde 2026-03-10, mas a declaracao não migra código.
 #
-# O teste nao carrega lista de enums removidos, que seria catalogo copiado e
+# O teste não carrega lista de enums removidos, que seria catálogo copiado e
 # apodreceria. Ele le do FONTE cada acesso `Classe.atributo` onde a Classe veio de
 # um `qgis.PyQt.*`, e resolve contra a biblioteca VIVA. Enum novo que o Qt remover
 # amanha aparece sozinho.
 #
-# So pega o que a GUI usaria: o caminho headless nao constroi widget, e foi por isso
-# que os 99 testes e a execucao real do validarestrutura passaram com o defeito de pe.
+# Só pega o que a GUI usaria: o caminho headless não constrói widget, e foi por isso
+# que os 99 testes e a execução real do validarestrutura passaram com o defeito de pe.
 # --------------------------------------------------------------------------
 def _acessos_qt_no_fonte():
-    """[(arquivo, linha, 'Classe', 'atributo', 'modulo')] do plugin inteiro."""
+    """[(arquivo, linha, 'Classe', 'atributo', 'módulo')] do plugin inteiro."""
     achados = []
     for caminho in sorted(p for p in PLUGIN.rglob("*.py") if CLI_DIR not in p.parents):
         arvore = ast.parse(caminho.read_text(encoding="utf-8"), filename=str(caminho))
-        # nome importado -> modulo de origem, so para os modulos do qgis.PyQt
+        # nome importado -> módulo de origem, só para os módulos do qgis.PyQt
         origem = {}
         for no in ast.walk(arvore):
             if isinstance(no, ast.ImportFrom) and (no.module or "").startswith("qgis.PyQt"):
@@ -240,8 +240,8 @@ def _acessos_qt_no_fonte():
     return achados
 
 
-# Roda DENTRO do python do QGIS: recebe os acessos por stdin e devolve os que nao
-# resolvem. Mantido curto de proposito, porque vai como argumento de `-c`.
+# Roda DENTRO do python do QGIS: recebe os acessos por stdin e devolve os que não
+# resolvem. Mantido curto de propósito, porque vai como argumento de `-c`.
 _SONDA = """
 import importlib, json, sys
 quebrados = []

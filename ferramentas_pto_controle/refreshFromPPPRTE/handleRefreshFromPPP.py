@@ -20,7 +20,7 @@ class HandleRefreshFromPPP():
         }
 
     def readPPP(self):
-        # Possibility : update the timestamp of measure's beginning from PPP and orbita(has domain)
+        # Possibility : update the timestamp of measure's beginning from PPP and órbita(has domain)
         files = [x for x in self.folder.rglob('*.txt') if '6_Processamento' in x.parts]
         correct_txts = []
         for item in files:
@@ -86,8 +86,8 @@ class HandleRefreshFromPPP():
     def updateDB(self, point):
         """Grava o resultado do PPP no ponto.
 
-        Vai por PARAMETRO, e nao por interpolacao na string. A data de
-        processamento sai como ISO, que e o formato que o GeoPackage le sem
+        Vai por PARÂMETRO, e não por interpolacao na string. A data de
+        processamento sai como ISO, que é o formato que o GeoPackage le sem
         depender de configuracao.
         """
         data = point['data_processamento']
@@ -110,8 +110,8 @@ class HandleRefreshFromPPP():
             ),
         )
         if cursor.rowcount == 0:
-            # Ponto processado que nao existe na missao quer dizer que o P03 nao
-            # rodou para ele, ou que o codigo diverge. Calar aqui perderia o dado.
+            # Ponto processado que não existe na missão quer dizer que o P03 não
+            # rodou para ele, ou que o código diverge. Calar aqui perderia o dado.
             raise ValueError(
                 f"o ponto {point['cod_ponto']} nao existe na missao. "
                 "Rode o P03 (atualizar banco) antes deste passo."
