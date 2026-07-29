@@ -138,5 +138,19 @@
     "constraints": [
       "A pagina compactar_pto_controle.md do manual descreve, por engano de copia, o objetivo do P14 (buraco na numeracao). Vale o codigo, nao aquela pagina."
     ]
+  },
+  "ptocontrole:prepararsca": {
+    "constraints": [
+      "Peca o id do LOTE ao Controle do Acervo antes de rodar: a missao E um lote de um projeto la, e o manifesto nao se monta sem ele.",
+      "Rode DEPOIS do P03. Antes dele as fotos ainda estao no tamanho original, e o pacote fica tres vezes maior.",
+      "A importacao no acervo tem duas fases: prepare-upload/missao com o manifesto.json, a copia dos arquivos para os caminhos que a resposta indicar, e confirm-upload. O servidor recalcula o SHA-256 no volume.",
+      "Nao gera mais um zip por ponto (mudou em 2026-07-28). O acervo registra arquivo a arquivo, com tipo proprio e limite por ponto.",
+      "O passo PARA se algum cod_ponto nao servir ao acervo (UF-HV-N ou UF-BASE-N, maiusculas, sem zero a esquerda) ou se dois arquivos do mesmo ponto tiverem o mesmo nome em subpastas diferentes.",
+      "Arquivo fora da estrutura de subpastas conhecida nao entra no manifesto, e sai na lista de avisos."
+    ],
+    "examples": [
+      "ptocontrole prepararsca --FOLDERIN pasta_da_missao --MISSAO missao.gpkg --LOTE 42 --FOLDEROUT pacote_sca",
+      "ptocontrole prepararsca --FOLDERIN pasta_da_missao --MISSAO missao.gpkg --LOTE 42 --SUBSTITUIR true --FOLDEROUT pacote_sca"
+    ]
   }
 }

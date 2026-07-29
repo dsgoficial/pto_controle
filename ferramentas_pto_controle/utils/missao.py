@@ -61,6 +61,29 @@ def _wkb_de(blob):
     return blob[8 + tamanho:]
 
 
+def lonlat_de(blob):
+    """Longitude e latitude de um BLOB de ponto do GeoPackage.
+
+    O caminho de volta de `ponto_gpkg`. Existe porque a GEOMETRIA é a posição
+    boa: as colunas `latitude` e `longitude` da tabela são REAL, e perdem casa
+    decimal (na sétima, cerca de 1 cm no terreno).
+
+    Devolve (None, None) para ponto sem geometria, que é o ainda não processado.
+    """
+    if not blob:
+        return None, None
+    wkb = _wkb_de(blob)
+    if not wkb or len(wkb) < 21:
+        return None, None
+    ordem = "<" if wkb[0] == 1 else ">"
+    tipo = struct.unpack(ordem + "I", wkb[1:5])[0]
+    # 1 = Point. Qualquer outro tipo aqui é erro de gravação, não coordenada.
+    if tipo != 1:
+        return None, None
+    lon, lat = struct.unpack(ordem + "dd", wkb[5:21])
+    return lon, lat
+
+
 def colunas_da_tabela(con, tabela):
     """Nomes das colunas, lidos do arquivo. Serve para descartar a chave que o CSV
     trouxe e a tabela não tem, em vez de estourar no meio da carga."""
