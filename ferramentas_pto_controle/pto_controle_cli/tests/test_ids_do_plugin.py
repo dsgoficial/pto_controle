@@ -94,8 +94,10 @@ def test_achou_os_algoritmos():
     """Se este teste quebrar, os outros deste arquivo passariam por vacuidade.
 
     Eram 15 até 2026-07-28, quando o P17 (preparar a missão para o Controle do
-    Acervo) entrou. Ao acrescentar algoritmo, ajuste este número de PROPOSITO."""
-    assert len(ALGORITMOS) == 16, [c.name for _, c in ALGORITMOS]
+    Acervo) entrou, e voltaram a 15 em 2026-07-29, quando o P14 (verificar
+    códigos disponíveis) saiu para o Controle do Acervo. Ao acrescentar ou
+    remover algoritmo, ajuste este número de PROPOSITO."""
+    assert len(ALGORITMOS) == 15, [c.name for _, c in ALGORITMOS]
 
 
 @pytest.mark.parametrize("caminho,classe", ALGORITMOS, ids=lambda x: getattr(x, "name", ""))
@@ -127,12 +129,19 @@ def test_ids_sao_unicos():
 
 
 def test_numeracao_do_manual_sem_repeticao():
-    """Os números do displayName são os passos P01..P16 do manual de uso."""
+    """Os números do displayName são os passos P01..P17 do manual de uso.
+
+    A numeração tem BURACO de propósito, e o teste cobra unicidade e não
+    continuidade: o 05 é passo externo (PPP no site do IBGE, ou RTE noutro
+    software) e o 14 saiu do plugin em 2026-07-29, porque a lista de códigos
+    disponíveis passou a ser uma rota do Controle do Acervo. Renumerar os
+    seguintes quebraria a correspondência com o manual, que é o que esses
+    números servem para manter."""
     titulos = [_chamada_tr_constante(c, "displayName") for _, c in ALGORITMOS]
     numeros = sorted(int(t[:2]) for t in titulos)
     assert len(set(numeros)) == len(numeros), f"passo repetido: {numeros}"
-    # O 05 e externo (PPP no site do IBGE, ou RTE noutro software): não é algoritmo.
     assert 5 not in numeros
+    assert 14 not in numeros, "o P14 saiu do plugin: ele agora e rota do SCA"
 
 
 def test_provider_tem_id_proprio():

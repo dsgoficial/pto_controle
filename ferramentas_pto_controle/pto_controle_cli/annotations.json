@@ -119,11 +119,6 @@
       "Essa dependencia de selecao interativa e o motivo de este algoritmo ser o de uso mais duvidoso headless."
     ]
   },
-  "ptocontrole:verificarcodigos": {
-    "constraints": [
-      "O codigo do ponto segue UF-HV-XXXX, com XXXX de ate 4 digitos e SEM zero a esquerda."
-    ]
-  },
   "ptocontrole:distribuircroqui": {
     "constraints": [
       "Parte da camada de pontos do croqui (arquivos/pontos_croqui.gpkg), que ja traz o estilo padrao. O ponto se digitaliza sobre imagem de fundo.",
@@ -148,9 +143,11 @@
       "O passo PARA se algum cod_ponto nao servir ao acervo (UF-HV-N ou UF-BASE-N, maiusculas, sem zero a esquerda) ou se dois arquivos do mesmo ponto tiverem o mesmo nome em subpastas diferentes.",
       "Arquivo fora da estrutura de subpastas conhecida nao entra no manifesto, e sai na lista de avisos."
     ],
-    "examples": [
-      "ptocontrole prepararsca --FOLDERIN pasta_da_missao --MISSAO missao.gpkg --LOTE 42 --FOLDEROUT pacote_sca",
-      "ptocontrole prepararsca --FOLDERIN pasta_da_missao --MISSAO missao.gpkg --LOTE 42 --SUBSTITUIR true --FOLDEROUT pacote_sca"
-    ]
+    "example": {
+      "FOLDERIN": "D:\\missoes\\missao_2026-07-03",
+      "MISSAO": "D:\\missoes\\missao_2026-07-03.gpkg",
+      "LOTE": 42,
+      "FOLDEROUT": "D:\\missoes\\pacote_sca"
+    }
   }
 }

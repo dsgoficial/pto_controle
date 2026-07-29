@@ -217,7 +217,6 @@ de escrever, o risco e baixo, mas nao e nulo.
 | `caminhosnosatributos` | P11 | 11 - Inserir nos atributos os caminhos dos arquivos |
 | `baixararquivos` | P12 | 12 - Download dos arquivos |
 | `corrigirdatatrimble` | P13 | 13 - Corrigir ToW para TRIMBLE |
-| `verificarcodigos` | P14 | 14 - Verificar codigos de pontos disponiveis |
 | `distribuircroqui` | P15 | 15 - Distribuir croqui digital na estrutura de pasta |
 | `compactarpastas` | P16 | 16 - Compactar as pastas dos pontos de controle |
 
