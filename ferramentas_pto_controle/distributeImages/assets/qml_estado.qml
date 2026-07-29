@@ -162,9 +162,9 @@
             <Option type="QString" name="offset" value="0,0"/>
             <Option type="QString" name="offset_map_unit_scale" value="3x:0,0,0,0,0,0"/>
             <Option type="QString" name="offset_unit" value="MM"/>
-            <Option type="QString" name="outline_color" value="212,212,212,255"/>
+            <Option type="QString" name="outline_color" value="64,64,64,255"/>
             <Option type="QString" name="outline_style" value="solid"/>
-            <Option type="QString" name="outline_width" value="0.46"/>
+            <Option type="QString" name="outline_width" value="0.3"/>
             <Option type="QString" name="outline_width_unit" value="MM"/>
             <Option type="QString" name="style" value="solid"/>
           </Option>

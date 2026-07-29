@@ -7,19 +7,23 @@ final, sem ponto base. Aqui vai o pacote COMPLETO, que é o que o acervo guarda.
 
 O que este passo entrega é um pacote pronto para as DUAS FASES do SCA:
 
-    manifesto.json     o corpo de POST /api/ponto_controle/prepare-upload/missao
-    <missao>.gpkg      a missão como ela foi validada em campo
-    SC-HV-69/          os arquivos do ponto, achatados, prontos para copiar
-    RS-HV-207/         ...
+    manifesto.json          o corpo de POST /api/ponto_controle/prepare-upload/missao
+    <missao>.gpkg           a missão como ela foi validada em campo
+    SC-HV-69/
+        SC-HV-69_pacote.zip a pasta do ponto inteira, menos a monografia
+        SC-HV-69.pdf        a monografia
+    RS-HV-207/              ...
 
 O manifesto traz, por ponto, os atributos lidos do GeoPackage e, por arquivo, o
 tipo, o nome, o tamanho e o SHA-256. O servidor recalcula esse SHA-256 quando os
 arquivos chegam ao volume: o daqui não é prova, é o que permite detectar a
 transferência que corrompeu.
 
-Deixou de gerar um zip por ponto (2026-07-28). O SCA registra arquivo a arquivo,
-com tipo próprio e limite por ponto; um zip chegaria como um arquivo só, de tipo
-nenhum, e o acervo perderia o que a estrutura de pastas carrega hoje.
+DOIS ARQUIVOS POR PONTO, e não um por arquivo (chefe, 2026-07-29; SCA a partir da
+versão 1.7.0). O acervo oferece exatamente dois downloads, e o domínio de tipos
+caiu de nove para dois. O zip guarda o caminho relativo, então a estrutura de
+subpastas atravessa inteira, e nenhum arquivo precisa ser renomeado para caber
+num nome só por ponto.
 """
 import json
 import re
@@ -35,8 +39,8 @@ from qgis.core import (QgsProcessingAlgorithm,
 from qgis.PyQt.QtCore import QCoreApplication
 
 from ..utils.missao import conecta, colunas_da_tabela, lonlat_de
-from .manifesto import (arquivos_do_ponto, cod_ponto_invalido,
-                        entrada_de_arquivo)
+from .manifesto import (MONOGRAFIA, PACOTE, acha_monografia,
+                        cod_ponto_invalido, entrada_de_arquivo, monta_pacote)
 
 # Mesma forma de código que o resto do plugin reconhece nas PASTAS. O manifesto
 # usa o cod_ponto do GeoPackage, que é o registro; este padrão só serve para
@@ -151,38 +155,44 @@ class PrepareToSCA(QgsProcessingAlgorithm):
                 # chega numa importação depois.
                 sem_pasta.append(cod_ponto)
             else:
-                aceitos, ignorados = arquivos_do_ponto(pasta)
-                ignorados_geral.extend(ignorados)
-
                 destino_ponto = pasta_out / cod_ponto
                 destino_ponto.mkdir(parents=True, exist_ok=True)
 
-                for caminho, tipo in aceitos:
-                    entrada = entrada_de_arquivo(caminho, tipo)
-                    nome_fisico = (
-                        f"{entrada['nome_arquivo']}.{entrada['extensao']}"
-                        if entrada['extensao'] else entrada['nome_arquivo']
-                    )
-                    alvo = destino_ponto / nome_fisico
+                # O PACOTE: a pasta do ponto inteira, menos a monografia. O zip
+                # guarda o caminho relativo, então a estrutura de subpastas
+                # atravessa. Nada precisa ser renomeado para caber, e arquivo
+                # fora da estrutura conhecida entra junto em vez de sumir.
+                zip_alvo = destino_ponto / f'{cod_ponto}_pacote.zip'
+                incluidos, lixo = monta_pacote(pasta, zip_alvo)
+                ignorados_geral.extend(lixo)
 
-                    # A pasta de origem some no caminho: o que ela significava
-                    # virou tipo_arquivo_id. Dois arquivos de subpastas
-                    # diferentes com o MESMO nome colidiriam aqui, e é melhor
-                    # parar do que sobrescrever um deles calado.
-                    if alvo.exists():
-                        raise QgsProcessingException(
-                            f'{cod_ponto}: dois arquivos com o nome {nome_fisico} '
-                            f'em subpastas diferentes. Renomeie um deles.'
-                        )
-                    shutil.copyfile(caminho, alvo)
+                if incluidos:
+                    entrada = entrada_de_arquivo(zip_alvo, PACOTE)
+                    arquivos.append(entrada)
+                    total_arquivos += 1
+                    total_mb += entrada['tamanho_mb']
+                else:
+                    zip_alvo.unlink()
 
+                # A MONOGRAFIA viaja sozinha: é o documento que alguém procura
+                # sem querer o resto.
+                try:
+                    monografia = acha_monografia(pasta)
+                except ValueError as erro:
+                    raise QgsProcessingException(str(erro))
+                if monografia is not None:
+                    alvo = destino_ponto / f'{cod_ponto}.pdf'
+                    shutil.copyfile(monografia, alvo)
+                    entrada = entrada_de_arquivo(alvo, MONOGRAFIA)
                     arquivos.append(entrada)
                     total_arquivos += 1
                     total_mb += entrada['tamanho_mb']
 
                 feedback.pushInfo(
-                    f'{cod_ponto}: {len(arquivos)} arquivo(s)'
-                    + (f', {len(ignorados)} fora da estrutura' if ignorados else '')
+                    f'{cod_ponto}: pacote com {len(incluidos)} arquivo(s)'
+                    + (', mais a monografia' if monografia is not None
+                       else ', SEM monografia')
+                    + (f', {len(lixo)} descartado(s)' if lixo else '')
                 )
 
             pontos.append({
@@ -217,17 +227,29 @@ class PrepareToSCA(QgsProcessingAlgorithm):
             )
         if ignorados_geral:
             feedback.pushWarning(
-                f'{len(ignorados_geral)} arquivo(s) FORA da estrutura conhecida '
-                'não entraram no manifesto:'
+                f'{len(ignorados_geral)} arquivo(s) de sistema descartado(s) do '
+                'pacote:'
             )
             for caminho in ignorados_geral[:20]:
                 feedback.pushWarning(f'  {caminho.name}')
             if len(ignorados_geral) > 20:
                 feedback.pushWarning(f'  ... e mais {len(ignorados_geral) - 20}')
 
+        sem_monografia = [
+            p['cod_ponto'] for p in pontos
+            if p['arquivos'] and not any(
+                a['tipo_arquivo_id'] == MONOGRAFIA for a in p['arquivos'])
+        ]
+        if sem_monografia:
+            feedback.pushWarning(
+                f'{len(sem_monografia)} ponto(s) SEM monografia, entrando só com '
+                f'o pacote: {", ".join(sem_monografia[:10])}'
+                + (' ...' if len(sem_monografia) > 10 else '')
+            )
+
         feedback.pushInfo(
             f'Pacote pronto em {pasta_out}: {len(pontos)} ponto(s), '
-            f'{total_arquivos} arquivo(s), {total_mb:.1f} MB, '
+            f'{total_arquivos} arquivo(s) para o acervo, {total_mb:.1f} MB, '
             f'mais {missao.name} e manifesto.json.'
         )
         return {self.OUTPUT: str(pasta_out)}
@@ -285,7 +307,7 @@ class PrepareToSCA(QgsProcessingAlgorithm):
 
     def shortHelpString(self):
         return self.tr('''
-            P17. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: o manifesto.json, o GeoPackage da missão e uma pasta por ponto com os arquivos prontos para copiar.
+            P17. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: o manifesto.json, o GeoPackage da missão e, por ponto, DOIS arquivos: o pacote zipado e a monografia.
 
             Antes: a missão toda validada, e o P03 já rodado. Peça ao Controle do Acervo o id do LOTE, que é como a missão é identificada lá.
             Depois: a importação no Controle do Acervo, em duas fases.
@@ -295,26 +317,31 @@ class PrepareToSCA(QgsProcessingAlgorithm):
             2. Copie a pasta de cada ponto para o volume, nos caminhos que a resposta indicou.
             3. POST /api/ponto_controle/confirm-upload com o session_uuid. O servidor relê cada arquivo, recalcula o SHA-256 e grava.
 
+            Por que dois arquivos por ponto:
+            - o acervo oferece exatamente dois downloads, o pacote e a monografia;
+            - o zip guarda o caminho relativo, então a estrutura de subpastas atravessa inteira;
+            - nenhum arquivo precisa ser renomeado para caber num nome só por ponto.
+
             Diferença para o P10, que prepara o pacote do BPC:
             - o P10 leva quatro arquivos por ponto, renomeados, só de órbita FINAL e sem ponto base;
-            - este leva todos os arquivos de cada ponto, sem filtro nenhum.
+            - este leva a pasta inteira de cada ponto, sem filtro nenhum.
 
             Tamanho, medido na amostra do repositório (4 pontos):
             - pasta como o medidor entrega, antes do P03: cerca de 11 MB por ponto, dos quais 78% são as fotos de rastreio;
             - depois do P03, que recomprime essas fotos e substitui as originais: cerca de 3,6 MB por ponto.
 
-            Ou seja, uma missão de 100 pontos que passou pelo P03 dá cerca de 360 MB. O pacote do BPC, para comparar, custa cerca de 1,4 MB por ponto.
+            O zip quase não reduz o tamanho, porque JPEG já vem comprimido: medido em 5 pontos do acervo, o pacote fica em 92% da pasta. Ele é escolha de ORGANIZAÇÃO, e não de espaço.
 
             Atenção:
-            - Não gera mais um zip por ponto. O acervo registra arquivo a arquivo, com tipo próprio; um zip chegaria como um arquivo só, de tipo nenhum.
-            - O passo PARA se algum código de ponto não servir ao acervo, ou se dois arquivos do mesmo ponto tiverem o mesmo nome em subpastas diferentes.
-            - Arquivo fora da estrutura de subpastas conhecida não entra no manifesto, e aparece na lista de avisos.
+            - O passo PARA se algum código de ponto não servir ao acervo, ou se a pasta 8_Monografia tiver mais de um PDF.
+            - Ponto sem monografia entra só com o pacote, e aparece na lista de avisos.
+            - Só arquivo de sistema (Thumbs.db, .DS_Store) fica de fora do pacote. Todo o resto entra, inclusive o que estiver fora da estrutura de subpastas conhecida.
             - Rode depois do P03. Antes dele o pacote fica três vezes maior, com as fotos ainda no tamanho original.
             ''')
 
     def shortDescription(self):
         return self.tr(
-            'P17. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: manifesto.json, o GeoPackage e uma pasta por ponto com os arquivos.'
+            'P17. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: manifesto.json, o GeoPackage e, por ponto, o pacote zipado mais a monografia.'
         )
 
     def tr(self, string):

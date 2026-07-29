@@ -20,20 +20,29 @@ class HandleDistributeImages():
             Path(folder / '7_Imagens_Monografia').mkdir(exist_ok=True)
 
     def distribute_images(self):
+        """Copia as tres vistas para cada pasta de ponto.
+
+        Devolve a lista de falhas. Quem chama TEM de olhar essa lista: antes o
+        erro so era impresso, entao o P08 dizia 'concluido' mesmo sem ter copiado
+        uma imagem sequer.
+        """
+        falhas = []
         for folder in self.folders:
             point = folder.parts[-1]
-            try:
-                shutil.copy(str(Path(self.aer_view / f'{point}.jpg')), str(
-                    folder / '7_Imagens_Monografia' / f'{point}_AEREA.jpg'))
-                shutil.copy(str(Path(self.view1 / f'{point}.jpg')), str(
-                    folder / '7_Imagens_Monografia' / f'{point}_MUNICIPIO.jpg'))
-                shutil.copy(str(Path(self.view2 / f'{point}.jpg')), str(
-                    folder / '7_Imagens_Monografia' / f'{point}_ESTADO.jpg'))
-            except IOError as err:
-                print(err)
+            destino = folder / '7_Imagens_Monografia'
+            for origem, sufixo in [(self.aer_view, 'AEREA'),
+                                   (self.view1, 'MUNICIPIO'),
+                                   (self.view2, 'ESTADO')]:
+                arquivo = origem / f'{point}.jpg'
+                try:
+                    shutil.copy(str(arquivo), str(destino / f'{point}_{sufixo}.jpg'))
+                except (IOError, OSError) as err:
+                    falhas.append(f'{point} {sufixo}: {err}')
+        return falhas
 
 
 if __name__ == "__main__":
     handle = HandleDistributeImages(*sys.argv[1:])
     handle.create_folder()
-    handle.distribute_images()
+    for falha in handle.distribute_images():
+        print(falha)

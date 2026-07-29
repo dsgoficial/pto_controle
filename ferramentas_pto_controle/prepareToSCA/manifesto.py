@@ -9,48 +9,38 @@ O SCA importa em DUAS FASES, como faz com o resto do acervo:
 3. `POST /api/ponto_controle/confirm-upload` faz o servidor RELER cada arquivo,
    recalcular o SHA-256 e só então gravar.
 
-Daí duas decisões deste módulo:
+**Cada ponto vai em DOIS arquivos, e não um por arquivo** (decisão do chefe em
+2026-07-29, refletida no SCA a partir da versão 1.7.0):
 
-- **O checksum é calculado aqui, sobre o arquivo que vai viajar.** Ele não é
-  prova (o servidor recalcula no destino); é o que permite ao servidor detectar
-  a transferência que corrompeu.
-- **O arquivo vai INDIVIDUAL, e não num zip por ponto.** O SCA registra arquivo
-  a arquivo, com tipo próprio e limite por ponto (`maximo_por_ponto`). Um zip
-  chegaria como um arquivo só, de tipo nenhum, e o acervo perderia justamente o
-  que a estrutura de pastas carrega hoje.
+- o **pacote**, um zip com tudo o que só se lê junto (rastreio, RINEX, fotos,
+  croqui, processamento, imagens da monografia);
+- a **monografia**, o PDF que alguém procura sozinho.
 
-A pasta de origem some no caminho, e é de propósito: o que `3_Foto_Rastreio` e
-`7_Imagens_Monografia` significam vira `tipo_arquivo_id` no manifesto. É para
-isso que o domínio existe do outro lado.
+São também os dois únicos downloads que a tela do acervo oferece. Por isso o
+domínio `ponto_controle.tipo_arquivo` tem só estes dois códigos.
+
+O zip guarda o caminho RELATIVO de cada arquivo, então a estrutura de pastas
+sobrevive dentro dele. Duas consequências práticas: nada precisa ser renomeado
+para caber num nome só por ponto, e arquivo fora da estrutura conhecida entra
+junto em vez de ficar de fora.
+
+O checksum é calculado aqui, sobre o arquivo que vai viajar. Ele não é prova (o
+servidor recalcula no destino); é o que permite ao servidor detectar a
+transferência que corrompeu.
 """
 import hashlib
 import re
+import zipfile
 
 # Códigos de ponto_controle.tipo_arquivo, no er/ponto_controle.sql do SCA.
 # Mudou lá, muda aqui: o servidor RECUSA tipo que não existe, o que é melhor do
 # que gravar com o tipo errado.
-FOTO_RASTREIO = 1
-FOTO_AEREA = 2
-CROQUI_MANUAL = 3
-CROQUI_DIGITAL = 4
-MONOGRAFIA = 5
-RINEX = 6
-BRUTO_COLETORA = 7
-RELATORIO_PROCESSAMENTO = 8
-FOTO_AUXILIAR = 9
+PACOTE = 1
+MONOGRAFIA = 2
 
-# A subpasta diz o tipo. Onde uma pasta guarda mais de um tipo, o nome do
-# arquivo desempata (ver `tipo_do_arquivo`).
-TIPO_POR_PASTA = {
-    "1_Formato_Nativo": BRUTO_COLETORA,
-    "2_RINEX": RINEX,
-    "3_Foto_Rastreio": FOTO_RASTREIO,
-    "4_Croqui": CROQUI_MANUAL,
-    "5_Croqui": CROQUI_MANUAL,
-    "6_Processamento": RELATORIO_PROCESSAMENTO,
-    "7_Imagens_Monografia": FOTO_AUXILIAR,
-    "8_Monografia": MONOGRAFIA,
-}
+# A monografia sai do pacote e viaja sozinha. É a única subpasta com tratamento
+# próprio; todo o resto entra no zip como está.
+PASTA_MONOGRAFIA = "8_Monografia"
 
 # O SCA valida o código com este padrão. Conferir AQUI, na geração, é o que
 # evita descobrir um `SC-Base-07` no fim de uma transferência de 300 MB.
@@ -59,43 +49,63 @@ RE_COD_PONTO_SCA = re.compile(r"^[A-Z]{2}-(HV|BASE)-[1-9][0-9]{0,3}$")
 LIXO = {".DS_Store", "Thumbs.db", "desktop.ini"}
 
 
-def tipo_do_arquivo(caminho, raiz_ponto):
-    """Código de tipo_arquivo para um arquivo dentro da pasta de um ponto.
+def eh_lixo(caminho, relativo):
+    return caminho.name in LIXO or "__MACOSX" in relativo.parts
 
-    Devolve None para arquivo que não está em nenhuma subpasta conhecida. Quem
-    chama RELATA esses, em vez de descartá-los calado: arquivo solto na raiz do
-    ponto costuma ser coisa que o medidor deixou para trás, e ninguém quer
-    descobrir isso depois da importação.
+
+def monta_pacote(raiz_ponto, destino_zip):
+    """Zipa a pasta do ponto INTEIRA, menos a monografia.
+
+    Devolve (incluidos, lixo). O caminho dentro do zip é o relativo à pasta do
+    ponto, então `2_RINEX/SC-HV-69.22o` continua sendo `2_RINEX/SC-HV-69.22o` do
+    outro lado. Nenhum arquivo é descartado por estar fora da estrutura
+    conhecida: o pacote é a pasta como ela é.
     """
-    relativo = caminho.relative_to(raiz_ponto)
-    if len(relativo.parts) < 2:
+    incluidos = []
+    lixo = []
+    with zipfile.ZipFile(destino_zip, "w", zipfile.ZIP_DEFLATED) as z:
+        for caminho in sorted(raiz_ponto.rglob("*")):
+            if not caminho.is_file():
+                continue
+            relativo = caminho.relative_to(raiz_ponto)
+            if eh_lixo(caminho, relativo):
+                lixo.append(caminho)
+                continue
+            if relativo.parts[0] == PASTA_MONOGRAFIA:
+                continue
+            z.write(caminho, relativo.as_posix())
+            incluidos.append(caminho)
+    return incluidos, lixo
+
+
+def acha_monografia(raiz_ponto):
+    """O PDF da monografia do ponto, ou None.
+
+    Levanta se houver mais de um: o acervo guarda UMA monografia por ponto, e
+    escolher uma delas calado seria decidir no lugar de quem mediu.
+    """
+    pasta = raiz_ponto / PASTA_MONOGRAFIA
+    if not pasta.is_dir():
         return None
-
-    pasta = relativo.parts[0]
-    tipo = TIPO_POR_PASTA.get(pasta)
-    if tipo is None:
+    pdfs = sorted(
+        p for p in pasta.iterdir()
+        if p.is_file() and p.suffix.lower() == ".pdf" and p.name not in LIXO
+    )
+    if not pdfs:
         return None
-
-    nome = caminho.stem.upper()
-
-    # 4_Croqui guarda os dois: o desenhado em campo e o que o P15 gera por
-    # atlas, com o sufixo _CROQUI_DIGITAL.
-    if tipo == CROQUI_MANUAL and "CROQUI_DIGITAL" in nome:
-        return CROQUI_DIGITAL
-
-    # 7_Imagens_Monografia guarda a vista aérea do ponto (que o BPC pede como
-    # tal) ao lado das vistas de município e estado, que são auxiliares.
-    if tipo == FOTO_AUXILIAR and nome.endswith("_AEREA"):
-        return FOTO_AEREA
-
-    return tipo
+    if len(pdfs) > 1:
+        raise ValueError(
+            f"{raiz_ponto.name}: {pasta.name} tem {len(pdfs)} PDFs "
+            f"({', '.join(p.name for p in pdfs)}); o acervo guarda um por ponto"
+        )
+    return pdfs[0]
 
 
 def sha256_de(caminho, bloco=1024 * 1024):
     """SHA-256 e tamanho em MB, lendo por bloco.
 
-    Por bloco, e não `read()`: um RINEX de rastreio longo passa de centenas de
-    MB, e o QGIS roda no mesmo processo da interface.
+    Por bloco, e não `read()`: o pacote de um ponto passa de dezenas de MB, e o
+    QGIS roda no mesmo processo da interface.
     """
     h = hashlib.sha256()
     total = 0
@@ -106,33 +116,14 @@ def sha256_de(caminho, bloco=1024 * 1024):
     return h.hexdigest(), total / (1024 * 1024)
 
 
-def arquivos_do_ponto(raiz_ponto):
-    """Lista (caminho, tipo) dos arquivos de um ponto, e os que ficaram de fora.
-
-    Devolve (aceitos, ignorados). Nada some em silêncio.
-    """
-    aceitos = []
-    ignorados = []
-    for caminho in sorted(raiz_ponto.rglob("*")):
-        if not caminho.is_file():
-            continue
-        if caminho.name in LIXO or "__MACOSX" in caminho.parts:
-            continue
-        tipo = tipo_do_arquivo(caminho, raiz_ponto)
-        if tipo is None:
-            ignorados.append(caminho)
-            continue
-        aceitos.append((caminho, tipo))
-    return aceitos, ignorados
-
-
 def entrada_de_arquivo(caminho, tipo):
     """Um item de `arquivos` no manifesto, como o schema do SCA o espera."""
     checksum, tamanho_mb = sha256_de(caminho)
     return {
         "tipo_arquivo_id": tipo,
         # O SCA remonta o caminho como <nome_arquivo>.<extensao>, então os dois
-        # saem separados. `SC-HV-69.22o.pdf` vira nome 'SC-HV-69.22o' e 'pdf'.
+        # saem separados. `SC-HV-69_pacote.zip` vira nome 'SC-HV-69_pacote' e
+        # extensão 'zip'.
         "nome_arquivo": caminho.stem,
         "extensao": caminho.suffix.lstrip(".").lower() or None,
         "tamanho_mb": round(tamanho_mb, 6),
