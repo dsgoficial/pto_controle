@@ -35,6 +35,7 @@ from datetime import datetime
 from pathlib import Path
 from qgis.core import (QgsProcessing,
                        QgsProcessingAlgorithm,
+                       QgsProcessingException,
                        QgsProcessingParameterFile,
                        QgsProcessingParameterString,
                        QgsProcessingParameterField,
@@ -296,10 +297,18 @@ class LoadToBPC(QgsProcessingAlgorithm):
         feedback.pushInfo(f'Pontos exportados para o BPC: {exportados}')
 
         if exportados == 0:
-            feedback.reportError(
-                'Nenhum ponto passou nos critérios do BPC. Os mais comuns são '
-                'órbita diferente de FINAL, campo de domínio ainda em 9999 e '
-                'data de processamento em branco.'
+            # PARA, e não avisa. Um GeoPackage vazio é insumo inútil para o BPC, e
+            # o reportError sozinho não muda o código de saída: o qgis_process
+            # devolvia 0, e quem orquestra pelo código de saída (o padrão do CLI e
+            # de qualquer agente) lia sucesso. Medido em 2026-07-30, com quatro
+            # pontos ainda em "aguardando revisão".
+            raise QgsProcessingException(
+                'Nenhum ponto passou nos critérios do BPC, e o pontos_exportados.gpkg '
+                'sairia VAZIO. Os motivos mais comuns, em ordem: ponto que ainda não '
+                'está APROVADO (tipo_situacao 3), órbita diferente de FINAL, campo de '
+                'domínio ainda em 9999 e data de processamento em branco. Confira a '
+                'missão e rode de novo. Os .zip por ponto já foram gerados na pasta de '
+                'saída e não se apagam.'
             )
 
         if process_type == 0:
@@ -322,14 +331,14 @@ class LoadToBPC(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('10 - Preparar insumos para carregamento no BPC')
+        return self.tr('11 - Preparar insumos para carregamento no BPC')
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr("Pós-processamento")
+        return self.tr("4. Entregar")
 
     def groupId(self):
         """
@@ -339,13 +348,13 @@ class LoadToBPC(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return "posprocessamento"
+        return "entrega"
 
     def shortHelpString(self):
         return self.tr('''
-            P10. Monta os insumos para subir ao Banco de Pontos de Controle da DSG: um .zip por ponto e o GeoPackage pontos_exportados.gpkg.
+            P11. Monta os insumos para subir ao Banco de Pontos de Controle da DSG: um .zip por ponto e o GeoPackage pontos_exportados.gpkg.
 
-            Antes: P09, monografias geradas.
+            Antes: P10, monografias geradas. É um dos dois passos de ENTREGA, e o outro é o P12. Os dois leem a mesma missão pronta, não se falam, e a ordem entre eles é livre.
             Depois: o carregamento é MANUAL e fora do plugin. Suba os .zip por SFTP e depois carregue o .gpkg em "Adicionar Geopackage", na página web do BPC.
 
             Atenção:
@@ -353,12 +362,12 @@ class LoadToBPC(QgsProcessingAlgorithm):
             - No ramo PPP, só entram os pontos com ÓRBITA FINAL. Ponto com órbita rápida fica de fora em silêncio, mesmo estando no CSV.
             - Ponto cujo código tenha BASE no meio (por exemplo RS-BASE-5) é descartado.
             - Desde a troca do PostgreSQL pelo GeoPackage, a exportação é feita pelo próprio plugin. Não exige mais o ogr2ogr no PATH.
-            - Quer o pacote COMPLETO da missão, sem esses filtros? É o P17, que prepara para o Controle do Acervo.
+            - Quer o pacote COMPLETO da missão, sem esses filtros? É o P12, que prepara para o Controle do Acervo.
             ''')
 
     def shortDescription(self):
         return self.tr(
-            'P10. Monta os insumos para subir ao Banco de Pontos de Controle da DSG: um .zip por ponto e o GeoPackage pontos_exportados.gpkg.'
+            'P11. Monta os insumos para subir ao Banco de Pontos de Controle da DSG: um .zip por ponto e o GeoPackage pontos_exportados.gpkg.'
         )
 
     def tr(self, string):

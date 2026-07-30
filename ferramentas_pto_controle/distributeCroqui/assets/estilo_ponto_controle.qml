@@ -146,7 +146,7 @@
   </elevation>
   <renderer-v2 symbollevels="0" type="RuleRenderer" forceraster="0" referencescale="-1" enableorderby="0">
     <rules key="{8bc242a9-8ed8-4cd7-ad81-2de22efaa2da}">
-      <rule key="{10fdbc77-b1cd-40e7-af2a-145d2aec936a}" symbol="0" filter="@atlas_pagename = &quot;cod_ponto&quot;&#xa;&#xa;"/>
+      <rule key="{10fdbc77-b1cd-40e7-af2a-145d2aec936a}" symbol="0" filter="&quot;cod_ponto&quot; = attribute(@atlas_feature, 'cod_ponto')"/>
     </rules>
     <symbols>
       <symbol name="0" is_animated="0" type="marker" alpha="1" frame_rate="10" force_rhr="0" clip_to_extent="1">

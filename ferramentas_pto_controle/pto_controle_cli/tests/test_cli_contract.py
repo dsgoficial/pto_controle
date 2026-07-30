@@ -280,3 +280,79 @@ def test_dry_run_traduz_o_indice_do_enum_para_rotulo():
         HELP_ENUM,
     )
     assert "Retrato" in saida
+
+
+# --------------------------------------------------------------------------
+# Obrigatorio COM padrao, e o ambiente dos passos de layout (2026-07-30)
+#
+# Os dois nasceram da mesma medida: rodar o fluxo inteiro pelo CLI como um
+# AGENTE o rodaria, sem ambiente preparado a mao e sem repetir valor que o
+# contrato ja anuncia.
+# --------------------------------------------------------------------------
+HELP_COM_PADRAO = {
+    "parameters": {
+        "PASTA": {"name": "PASTA", "optional": False, "default_value": None},
+        "DPI": {"name": "DPI", "optional": False, "default_value": 300},
+        "ESCALA": {"name": "ESCALA", "optional": False, "default_value": 500},
+        "VAZIO": {"name": "VAZIO", "optional": False, "default_value": ""},
+        "SAIDA": {"name": "SAIDA", "optional": False, "default_value": "x",
+                  "is_destination": True},
+    }
+}
+
+
+def test_obrigatorio_com_padrao_nao_se_cobra():
+    """O motor aplica o padrao sozinho. Cobrar era ser mais estrito sem ganho.
+
+    DPI e ESCALA ficam de FORA do corpo de propósito: e isso que se afirma aqui.
+    """
+    erros = cli.validate_inputs(
+        {"PASTA": "/x", "VAZIO": "/z", "SAIDA": "/y"}, HELP_COM_PADRAO)
+    assert erros == [], erros
+
+
+def test_obrigatorio_sem_padrao_continua_cobrado():
+    erros = cli.validate_inputs({"DPI": 300, "SAIDA": "/y"}, HELP_COM_PADRAO)
+    faltando = [e for e in erros if "PASTA" in e["message"]]
+    assert faltando, erros
+
+
+def test_padrao_de_string_vazia_nao_conta_como_padrao():
+    """Varios algoritmos declaram defaultValue='' em pasta ou camada, e o motor
+    nao faz nada com isso: aceitar calado adiaria o erro para pior lugar."""
+    erros = cli.validate_inputs({"PASTA": "/x", "SAIDA": "/y"}, HELP_COM_PADRAO)
+    assert [e for e in erros if "VAZIO" in e["message"]], erros
+    assert not [e for e in erros if "DPI" in e["message"]], erros
+
+
+def test_destino_com_padrao_continua_cobrado():
+    """Saida e diferente: o qgis_process nao inventa destino, ele aborta."""
+    erros = cli.validate_inputs({"PASTA": "/x"}, HELP_COM_PADRAO)
+    assert [e for e in erros if "SAIDA" in e["message"]], erros
+
+
+def test_ambiente_de_layout_aponta_para_o_share_do_qgis(tmp_path):
+    """O proj e o gdal NAO ficam no mesmo lugar: no QGIS 4.2.0 do Windows o
+    primeiro esta em share/proj e o segundo em apps/gdal/share/gdal."""
+    raiz = tmp_path / "QGIS"
+    (raiz / "bin").mkdir(parents=True)
+    (raiz / "share" / "proj").mkdir(parents=True)
+    (raiz / "apps" / "gdal" / "share" / "gdal").mkdir(parents=True)
+    falso = raiz / "bin" / "qgis_process-qgis.bat"
+    falso.write_text("", encoding="utf-8")
+
+    env = cli.ambiente_de_layout(str(falso))
+    assert env["PROJ_DATA"] == str(raiz / "share" / "proj")
+    assert env["GDAL_DATA"] == str(raiz / "apps" / "gdal" / "share" / "gdal")
+
+
+def test_ambiente_de_layout_nao_inventa_pasta_que_nao_existe(tmp_path):
+    """Sem o share/ no lugar esperado, a chave NAO entra: apontar PROJ_DATA para
+    uma pasta inexistente e pior do que nao apontar, porque o proj para de achar
+    o proprio banco."""
+    falso = tmp_path / "bin" / "qgis_process-qgis.bat"
+    falso.parent.mkdir(parents=True)
+    falso.write_text("", encoding="utf-8")
+    env = cli.ambiente_de_layout(str(falso))
+    assert "PROJ_DATA" not in env
+    assert "GDAL_DATA" not in env

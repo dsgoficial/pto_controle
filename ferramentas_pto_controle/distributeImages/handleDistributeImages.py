@@ -4,6 +4,13 @@ import sys
 import shutil
 
 
+# O MESMO padrao que o P02 cobra da estrutura de pastas, e por isso o contrato.
+# O anterior era r'\w\w-\w\w-0*\d+', que exige exatamente DUAS letras no tipo e
+# portanto deixava toda pasta BASE de fora, calada: SC-BASE-1 nao casava, e o
+# ponto base ficava sem as tres vistas sem nenhuma mensagem.
+PASTA_DE_PONTO = re.compile(r'^[A-Z]{2}-(HV|Base|BASE)-[1-9][0-9]*$')
+
+
 class HandleDistributeImages():
 
     def __init__(self, structure, folder_aer_view, folder_view1, folder_view2):
@@ -14,8 +21,8 @@ class HandleDistributeImages():
         self.view2 = Path(folder_view2)
 
     def create_folder(self):
-        self.folders = [x for x in self.structure.rglob(
-            '*') if x.is_dir() and re.match(r'\w\w-\w\w-0*\d+', x.parts[-1])]
+        self.folders = [x for x in self.structure.rglob('*')
+                        if x.is_dir() and PASTA_DE_PONTO.match(x.parts[-1])]
         for folder in self.folders:
             Path(folder / '7_Imagens_Monografia').mkdir(exist_ok=True)
 

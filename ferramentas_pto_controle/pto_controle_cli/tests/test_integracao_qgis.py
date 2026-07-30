@@ -80,6 +80,32 @@ def _ids_do_fonte():
     return ids
 
 
+def _ids_auxiliares_do_fonte():
+    """Ids cujo groupId é 'auxiliares'. LIDO do fonte, nunca uma lista à mão.
+
+    Uma lista copiada aqui apodreceria no dia em que outra auxiliar entrasse, e o
+    teste passaria a cobrar número de quem não deve ter.
+    """
+    ids = set()
+    for caminho in sorted(p for p in PLUGIN.rglob("*.py") if CLI_DIR not in p.parents):
+        arvore = ast.parse(caminho.read_text(encoding="utf-8"), filename=str(caminho))
+        for no in ast.walk(arvore):
+            if not isinstance(no, ast.ClassDef):
+                continue
+            if "QgsProcessingAlgorithm" not in [b.id for b in no.bases if isinstance(b, ast.Name)]:
+                continue
+            retornos = {}
+            for metodo in no.body:
+                if not isinstance(metodo, ast.FunctionDef) or metodo.name not in ("name", "groupId"):
+                    continue
+                for corpo in metodo.body:
+                    if isinstance(corpo, ast.Return) and isinstance(corpo.value, ast.Constant):
+                        retornos[metodo.name] = corpo.value.value
+            if retornos.get("groupId") == "auxiliares" and "name" in retornos:
+                ids.add(retornos["name"])
+    return ids
+
+
 @pytest.fixture(scope="module")
 def tabela():
     tab = cli.list_algorithms()
@@ -109,8 +135,17 @@ def test_todo_id_e_invocavel_sem_aspas(tabela):
 @needs_qgis
 def test_o_rotulo_humano_sobreviveu(tabela):
     """O título numerado é o que o usuário do QGIS Desktop ve é o que casa com o
-    P01..P16 do manual. Ele mora no displayName, e é o que o `list` mostra."""
+    P01..P12 do manual. Ele mora no displayName, e é o que o `list` mostra.
+
+    A auxiliar (corrigir ToW para TRIMBLE) é a única SEM número, desde
+    2026-07-30: número é posto no fluxo, e ela roda antes do P02, fora da
+    sequência. Quem numerá-la de novo quebra o teste do fonte, não este."""
     for nome, rotulo in tabela.items():
+        if nome in _ids_auxiliares_do_fonte():
+            assert not re.match(r"^\d", rotulo), (
+                f"{nome}: e auxiliar e o rotulo {rotulo!r} comeca com numero"
+            )
+            continue
         assert re.match(r"^\d{2} - ", rotulo), f"{nome}: rótulo inesperado {rotulo!r}"
 
 

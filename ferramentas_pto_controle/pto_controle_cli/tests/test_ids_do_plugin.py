@@ -32,6 +32,14 @@ ANNOTATIONS = CLI_DIR / "annotations.json"
 RE_ID_VALIDO = re.compile(r"^[a-z0-9]+$")
 PROVIDER = "ptocontrole"
 
+# As quatro FASES do fluxo, na ordem, mais o balde da auxiliar. A ordem desta
+# lista e o contrato: o numero do passo tem de crescer junto com a fase, senao a
+# caixa de ferramentas promete uma sequencia que o fluxo nao tem.
+FASES = ["preparacao", "processamento", "documentacao", "entrega"]
+GRUPO_AUXILIAR = "auxiliares"
+# O 05 nao existe (processamento externo: PPP no IBGE ou RTE noutro software).
+PASSOS_ESPERADOS = {1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12}
+
 
 def _retorno_constante(classe, metodo):
     """String devolvida por `def <metodo>(self): return '...'`, ou None.
@@ -95,9 +103,11 @@ def test_achou_os_algoritmos():
 
     Eram 15 até 2026-07-28, quando o P17 (preparar a missão para o Controle do
     Acervo) entrou, e voltaram a 15 em 2026-07-29, quando o P14 (verificar
-    códigos disponíveis) saiu para o Controle do Acervo. Ao acrescentar ou
-    remover algoritmo, ajuste este número de PROPOSITO."""
-    assert len(ALGORITMOS) == 15, [c.name for _, c in ALGORITMOS]
+    códigos disponíveis) saiu para o Controle do Acervo. Caíram a 12 em
+    2026-07-30, com a poda do P11 (caminhos nos atributos), do P12 (download dos
+    arquivos) e do P16 (compactar as pastas). Ao acrescentar ou remover
+    algoritmo, ajuste este número de PROPOSITO."""
+    assert len(ALGORITMOS) == 12, [c.name for _, c in ALGORITMOS]
 
 
 @pytest.mark.parametrize("caminho,classe", ALGORITMOS, ids=lambda x: getattr(x, "name", ""))
@@ -116,7 +126,15 @@ def test_display_name_carrega_o_titulo_humano(caminho, classe):
     """O rótulo da caixa de ferramentas do QGIS não pode ter sumido no conserto do id."""
     titulo = _chamada_tr_constante(classe, "displayName")
     assert titulo, f"{classe.name}: displayName() deveria devolver self.tr('<título>')"
-    # O prefixo numérico é o que ordena a lista no QGIS e casa com o P01..P16 do manual.
+    # O prefixo numérico é o que ordena a lista no QGIS e casa com o P01..P12 do
+    # manual. Quem NAO tem número é a auxiliar, e a regra é essa: número é posto
+    # no fluxo. A auxiliar não tem posto, e numerá-la mente sobre quando rodar.
+    if _retorno_constante(classe, "groupId") == GRUPO_AUXILIAR:
+        assert not re.match(r"^\d", titulo), (
+            f"{classe.name}: e auxiliar e o rotulo {titulo!r} comeca com numero. "
+            "Numero e posto no fluxo: quem esta fora do fluxo nao recebe."
+        )
+        return
     assert re.match(r"^\d{2} - ", titulo), (
         f"{classe.name}: displayName() = {titulo!r}, esperava começar com 'NN - '"
     )
@@ -128,20 +146,54 @@ def test_ids_sao_unicos():
     assert not duplicados, f"id repetido no provider: {duplicados}"
 
 
-def test_numeracao_do_manual_sem_repeticao():
-    """Os números do displayName são os passos P01..P17 do manual de uso.
+def _passos():
+    """[(numero, groupId, classe)] dos algoritmos NUMERADOS, na ordem do rótulo."""
+    passos = []
+    for _, classe in ALGORITMOS:
+        if _retorno_constante(classe, "groupId") == GRUPO_AUXILIAR:
+            continue
+        titulo = _chamada_tr_constante(classe, "displayName")
+        passos.append((int(titulo[:2]), _retorno_constante(classe, "groupId"), classe))
+    return sorted(passos)
 
-    A numeração tem BURACO de propósito, e o teste cobra unicidade e não
-    continuidade: o 05 é passo externo (PPP no site do IBGE, ou RTE noutro
-    software) e o 14 saiu do plugin em 2026-07-29, porque a lista de códigos
-    disponíveis passou a ser uma rota do Controle do Acervo. Renumerar os
-    seguintes quebraria a correspondência com o manual, que é o que esses
-    números servem para manter."""
-    titulos = [_chamada_tr_constante(c, "displayName") for _, c in ALGORITMOS]
-    numeros = sorted(int(t[:2]) for t in titulos)
-    assert len(set(numeros)) == len(numeros), f"passo repetido: {numeros}"
-    assert 5 not in numeros
-    assert 14 not in numeros, "o P14 saiu do plugin: ele agora e rota do SCA"
+
+def test_numeracao_do_manual_e_exatamente_a_esperada():
+    """Os números do displayName são os passos P01..P12 do manual de uso.
+
+    O teste cobra o CONJUNTO, e não só a unicidade. Depois da renumeração de
+    2026-07-30 a sequência é contígua fora do 05, que é o passo externo (PPP no
+    site do IBGE, ou RTE noutro software). Buraco novo aqui é sinal de algoritmo
+    removido sem renumerar o resto, e o manual do doc_dgeo passaria a apontar
+    passo que não existe. Ao mudar o fluxo de propósito, mude PASSOS_ESPERADOS
+    junto, e o manual com ele."""
+    numeros = {n for n, _, _ in _passos()}
+    assert numeros == PASSOS_ESPERADOS, (
+        f"passos {sorted(numeros)}, esperava {sorted(PASSOS_ESPERADOS)}"
+    )
+
+
+def test_o_numero_do_passo_cresce_junto_com_a_fase():
+    """A fase e o número contam a MESMA história, ou um dos dois mente.
+
+    Este é o alarme do desenho de 2026-07-30: a entrega (BPC e Controle do
+    Acervo) é a ÚLTIMA fase, e a documentação do ponto vem antes dela. Um passo
+    de entrega numerado no meio, ou um passo de documentação numerado depois da
+    entrega, passa despercebido na caixa de ferramentas e leva quem opera a rodar
+    na ordem errada. Foi exatamente o que aconteceu com o croqui digital, que era
+    o 15 e rodava depois da monografia que o consome."""
+    fases = [FASES.index(grupo) for _, grupo, _ in _passos()]
+    assert fases == sorted(fases), (
+        "a ordem dos números não acompanha a ordem das fases: "
+        + str([(n, g) for n, g, _ in _passos()])
+    )
+
+
+def test_todo_algoritmo_esta_numa_fase_conhecida():
+    for _, classe in ALGORITMOS:
+        grupo = _retorno_constante(classe, "groupId")
+        assert grupo in FASES + [GRUPO_AUXILIAR], (
+            f"{classe.name}: groupId {grupo!r} nao e fase do fluxo nem auxiliar"
+        )
 
 
 def test_provider_tem_id_proprio():

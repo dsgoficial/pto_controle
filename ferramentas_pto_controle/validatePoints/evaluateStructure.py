@@ -469,7 +469,7 @@ class EvaluateStructure():
         erros = []
         erros += self.no_folders(pasta)
         files = [f for f in listdir(pasta) if isfile(join(pasta, f))]
-        foto_regex = "^{0}_\d+_FOTO_AUX.(jpg|JPG|jpeg|JPEG|png|PNG)$".format(pto)
+        foto_regex = r"^{0}_\d+_FOTO_AUX.(jpg|JPG|jpeg|JPEG|png|PNG)$".format(pto)
         for f in files:
             if search(foto_regex, f):
                 pass

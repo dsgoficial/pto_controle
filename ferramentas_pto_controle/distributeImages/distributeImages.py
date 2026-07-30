@@ -45,6 +45,7 @@ from qgis.PyQt.QtXml import QDomDocument
 
 import processing
 
+from ..utils.atlas import indice_da_extensao
 from .handleDistributeImages import HandleDistributeImages
 
 
@@ -157,29 +158,12 @@ class DistributeImages(QgsProcessingAlgorithm):
             return poligonos.getFeature(vizinhos[0])
         return None
 
-    def _indice_da_extensao(self, nome='jpg'):
-        """A posicao de 'jpg' na lista de formatos do atlaslayouttoimage.
-
-        A lista muda de uma versao do QGIS para outra. No QGIS 4.0.0 o indice 5 e
-        'jpeg' e o 6 e 'jpg'; o codigo antigo fixava 5, entao as imagens saiam
-        como .jpeg e o HandleDistributeImages, que procura .jpg, nao achava nada.
-        """
-        from qgis.core import QgsApplication
-        alg = QgsApplication.processingRegistry().algorithmById('native:atlaslayouttoimage')
-        if alg is not None:
-            for definicao in alg.parameterDefinitions():
-                if definicao.name() == 'EXTENSION':
-                    opcoes = list(definicao.options())
-                    if nome in opcoes:
-                        return opcoes.index(nome)
-        return 6
-
     def _exportar(self, cobertura, camadas, pasta, context, feedback):
         return processing.run('native:atlaslayouttoimage', {
             'ANTIALIAS': True,
             'COVERAGE_LAYER': cobertura,
             'DPI': 300,
-            'EXTENSION': self._indice_da_extensao('jpg'),
+            'EXTENSION': indice_da_extensao('jpg'),
             # O nome do arquivo sai do CAMPO, e nao de @atlas_pagename. No QGIS
             # 4.0.0 aquela variavel volta vazia aqui, e as quatro paginas se
             # sobrescreviam num unico arquivo com o nome da pasta.
@@ -217,7 +201,16 @@ class DistributeImages(QgsProcessingAlgorithm):
         os.makedirs(pasta_temp, exist_ok=True)
 
         feedback.pushInfo('Carregando o template de layout...')
-        project = QgsProject.instance()
+        # O native:atlaslayouttoimage resolve o LAYOUT pelo NOME, e procura esse
+        # nome no `context.project()`. Headless, no qgis_process, esse projeto e
+        # None: o layout ficava no QgsProject.instance(), que o filho nao olha, e o
+        # unico sinal era 'Cannot find layout with name "Vista Aerea"' no stderr,
+        # sem JSON de saida. Medido em 2026-07-30, no QGIS 4.2.0. Na GUI o
+        # context.project() ja vem preenchido e nada muda aqui.
+        project = context.project()
+        if project is None:
+            project = QgsProject.instance()
+            context.setProject(project)
         layout_manager = project.layoutManager()
 
         layout = QgsPrintLayout(project)
@@ -369,17 +362,17 @@ class DistributeImages(QgsProcessingAlgorithm):
         return self.tr('08 - Distribuir vistas aéreas na estrutura de pasta')
 
     def group(self):
-        return self.tr("Pós-processamento")
+        return self.tr("3. Documentar o ponto")
 
     def groupId(self):
-        return "posprocessamento"
+        return "documentacao"
 
     def shortHelpString(self):
         return self.tr('''
             P08. Gera pelo compositor de impressão três vistas de cada ponto (local por imagem de satélite, municipal e estadual) e distribui na pasta 7_Imagens_Monografia.
 
-            Antes: P07, com a camada de pontos carregada do banco.
-            Depois: P09, gerar a monografia.
+            Antes: P07, com a camada de pontos carregada da missão.
+            Depois: P09, gerar o croqui digital.
 
             Atenção:
             - A camada de pontos precisa da coluna cod_ponto preenchida.

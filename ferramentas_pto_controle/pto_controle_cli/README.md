@@ -15,7 +15,7 @@ carregar o plugin.
 
 ## Por que ele existe
 
-O plugin resolve o fluxo inteiro do ponto de controle (P01 a P16 do manual), mas so
+O plugin resolve o fluxo inteiro do ponto de controle (P01 a P12 do manual), mas so
 pela caixa de ferramentas do QGIS. Um lote de pontos, uma re-execucao depois de
 corrigir metadado, ou qualquer automacao exigia clique. O CLI tira isso do caminho.
 
@@ -203,22 +203,25 @@ invocavel.
 Quebra modelo ou script salvo que cite o id antigo. Como o id antigo era impossivel
 de escrever, o risco e baixo, mas nao e nulo.
 
-| id | passo | rotulo no QGIS |
-|---|---|---|
-| `criarbanco` | P01 | 01 - Criar banco de dados |
-| `validarestrutura` | P02 | 02 - Validar a estrutura de pastas |
-| `atualizarbanco` | P03 | 03 - Atualizar banco de dados |
-| `prepararprocessamento` | P04 | 04 - Preparar para processamento |
-| `posppp` | P06 | 06 - Procedimento pos PPP |
-| `atualizarbancoppprte` | P07 | 07 - Atualizar banco com dados do PPP/RTE |
-| `distribuirvistas` | P08 | 08 - Distribuir vistas aereas na estrutura de pasta |
-| `distribuirmonografia` | P09 | 09 - Gerar e distribuir monografias nas pastas |
-| `prepararbpc` | P10 | 10 - Preparar insumos para carregamento no BPC |
-| `caminhosnosatributos` | P11 | 11 - Inserir nos atributos os caminhos dos arquivos |
-| `baixararquivos` | P12 | 12 - Download dos arquivos |
-| `corrigirdatatrimble` | P13 | 13 - Corrigir ToW para TRIMBLE |
-| `distribuircroqui` | P15 | 15 - Distribuir croqui digital na estrutura de pasta |
-| `compactarpastas` | P16 | 16 - Compactar as pastas dos pontos de controle |
+| id | passo | rotulo no QGIS | fase |
+|---|---|---|---|
+| `criarbanco` | P01 | 01 - Criar a missao (GeoPackage) | 1. Preparar a missao |
+| `validarestrutura` | P02 | 02 - Validar a estrutura de pastas | 1. Preparar a missao |
+| `atualizarbanco` | P03 | 03 - Atualizar a missao | 1. Preparar a missao |
+| `prepararprocessamento` | P04 | 04 - Preparar para processamento | 1. Preparar a missao |
+| `posppp` | P06 | 06 - Procedimento pos PPP | 2. Incorporar o processamento |
+| `atualizarbancoppprte` | P07 | 07 - Atualizar a missao com dados do PPP/RTE | 2. Incorporar o processamento |
+| `distribuirvistas` | P08 | 08 - Distribuir vistas aereas na estrutura de pasta | 3. Documentar o ponto |
+| `distribuircroqui` | P09 | 09 - Gerar e distribuir croqui digital na estrutura de pasta | 3. Documentar o ponto |
+| `distribuirmonografia` | P10 | 10 - Gerar e distribuir monografias nas pastas | 3. Documentar o ponto |
+| `prepararbpc` | P11 | 11 - Preparar insumos para carregamento no BPC | 4. Entregar |
+| `prepararsca` | P12 | 12 - Preparar a missao para o Controle do Acervo | 4. Entregar |
+| `corrigirdatatrimble` | (sem numero) | Corrigir ToW para TRIMBLE | Auxiliares |
+
+A numeracao mudou em 2026-07-30, e os IDS NAO: quem invoca pelo CLI nao muda nada.
+Sairam tres algoritmos (P11 caminhos nos atributos, P12 download dos arquivos e P16
+compactar as pastas), o croqui digital subiu de 15 para 09 e a entrega foi para o fim.
+A auxiliar perdeu o numero, porque numero e posto no fluxo e ela roda antes do P02.
 
 Nao existe P05: e o passo externo, no site do PPP-IBGE ou num software de RTE.
 
@@ -248,17 +251,27 @@ ao vivo.
 
 ## Limites conhecidos
 
-- **Um algoritmo dos 15 foi exercitado headless de ponta a ponta** (2026-07-28): o
-  `validarestrutura` (P02) rodou sobre os dados de exemplo de
-  `arquivos/antes_processamento`, com exit 0 e a mensagem canonica "nao contem erros",
-  conferida no arquivo de relatorio e nao so no retorno da ferramenta. Os outros 14
-  seguem sem prova de execucao.
-- **`distribuircroqui` e `distribuirmonografia` sao o par de maior risco.** Montam
-  atlas de layout em `QgsProject.instance()` e trocam o estilo da camada durante a
-  execucao. Layout headless costuma funcionar, mas nao esta provado aqui.
-- **`baixararquivos` depende de selecao interativa** na camada, no canvas do QGIS.
-  Sem selecao nao baixa nada, e headless nao existe canvas. Provavelmente exige
-  mudanca no algoritmo para ser util por CLI.
-- **`prepararbpc` chama `ogr2ogr` por subprocesso**: ele tem de estar no PATH.
-- **Seis algoritmos exigem PostgreSQL alcancavel.** O `psycopg2` ja vem no Python do
-  QGIS 4.0.0 (confirmado na versao 2.9.11).
+- **O fluxo inteiro foi exercitado headless de ponta a ponta** (2026-07-30, QGIS
+  4.2.0), pelo proprio CLI, sobre os dados de exemplo de `arquivos/`: P01, P02, P03,
+  P04, P07, P08, P09, P10, P11 e P12, com o resultado conferido NO DESTINO (a missao
+  no disco, as imagens nas pastas, o PDF, o gpkg do BPC e o manifesto do acervo), e
+  nao no retorno da ferramenta. Falta prova de execucao do P06 (`posppp`), que exige o
+  arquivo devolvido pelo PPP do IBGE, e da auxiliar do ToW, que exige RINEX da coletora
+  TRIMBLE.
+- **O ramo RTE do P07 nao foi exercitado.** A prova usou o ramo PPP, porque a amostra
+  do repositorio tem o resultado do PPP e o `processamento_rte.csv` de exemplo cobre
+  outros pontos.
+- **O P11 PARA quando nenhum ponto passa nos criterios do BPC** (desde 2026-07-30).
+  Antes ele avisava e devolvia exit 0, com um GeoPackage vazio: quem orquestra pelo
+  codigo de saida lia sucesso. O criterio que mais reprova e o ponto que ainda nao
+  esta APROVADO (`tipo_situacao` 3), e aprovar e decisao humana, fora do plugin.
+- **Os passos de layout (P08, P09, P10) precisam de tres variaveis de ambiente**, e o
+  CLI as aplica sozinho desde 2026-07-30 (ver `ambiente_de_layout`). O `doctor` mostra
+  quais. Antes disso era conhecimento fora da banda: sem elas a monografia sai com
+  texto estourando a celula, ou a reprojecao erra calada porque um `proj.db` de outra
+  instalacao no PATH sombreia o do QGIS.
+- **Parametro obrigatorio COM padrao no contrato nao precisa ser passado**, desde
+  2026-07-30. O motor aplica o padrao sozinho, e cobrar era ser mais estrito do que
+  ele sem ganho nenhum. Padrao de string VAZIA nao conta, e continua cobrado.
+- **O `psycopg2` ja vem no Python do QGIS** (2.9.11 confirmado em 2026-07-28), mas
+  nenhum algoritmo usa mais PostgreSQL: a missao e um GeoPackage desde 2026-07-28.

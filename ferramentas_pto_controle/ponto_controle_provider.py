@@ -44,10 +44,7 @@ from .distributeCroqui.distributeCroqui import DistributeCroqui
 from .distributeMonograpy.distributeMonograpy import DistributeMonografia
 from .loadToBPC.loadToBPC import LoadToBPC
 from .refreshFromPPPRTE.refreshFromPPPRTE import RefreshFromPPPRTE
-from .pathFilesInAttribute.pathFilesInAttribute import PathFilesInAttribute
-from .downloadFiles.downloadFiles import DownloadFiles
 from .fixDateTrimble.fixDateTrimble import FixDateTrimble
-from .zipFoldersCheckpoints.zipFoldersCheckpoints import ZipFoldersCheckpoints
 from .prepareToSCA.prepareToSCA import PrepareToSCA
 
 class PontoControleProvider(QgsProcessingProvider):
@@ -70,22 +67,30 @@ class PontoControleProvider(QgsProcessingProvider):
     def loadAlgorithms(self):
         """
         Loads all algorithms belonging to this provider.
+
+        A ordem aqui é a ordem do FLUXO, e não a de importação. Ela repete a
+        numeração dos rótulos: 01 a 04 preparam a missão, 06 e 07 incorporam o
+        processamento, 08 a 10 documentam o ponto e 11 e 12 entregam. Não existe
+        05: é o processamento externo (PPP no IBGE ou RTE em outro software).
+        A auxiliar não é numerada, porque não tem posto no fluxo.
         """
+        # 1. Preparar a missão
+        self.addAlgorithm(CreateDatabase())
         self.addAlgorithm(ValidatePoints())
         self.addAlgorithm(RefreshDB())
-        self.addAlgorithm(CreateDatabase())
         self.addAlgorithm(BeforePPP())
+        # 2. Incorporar o processamento
         self.addAlgorithm(AfterPPP())
+        self.addAlgorithm(RefreshFromPPPRTE())
+        # 3. Documentar o ponto
         self.addAlgorithm(DistributeImages())
         self.addAlgorithm(DistributeCroqui())
         self.addAlgorithm(DistributeMonografia())
+        # 4. Entregar
         self.addAlgorithm(LoadToBPC())
-        self.addAlgorithm(RefreshFromPPPRTE())
-        self.addAlgorithm(PathFilesInAttribute())
-        self.addAlgorithm(DownloadFiles())
-        self.addAlgorithm(FixDateTrimble())
-        self.addAlgorithm(ZipFoldersCheckpoints())
         self.addAlgorithm(PrepareToSCA())
+        # Auxiliares
+        self.addAlgorithm(FixDateTrimble())
 
     def id(self):
         """

@@ -122,25 +122,26 @@ class DistributeMonografia(QgsProcessingAlgorithm):
         return {'total_gerado': sucesso}
 
     def name(self): return 'distribuirmonografia'
-    def displayName(self): return self.tr('09 - Gerar e distribuir monografias nas pastas')
-    def group(self): return self.tr("Pós-processamento")
-    def groupId(self): return "posprocessamento"
+    def displayName(self): return self.tr('10 - Gerar e distribuir monografias nas pastas')
+    def group(self): return self.tr("3. Documentar o ponto")
+    def groupId(self): return "documentacao"
     def shortHelpString(self):
         return self.tr('''
-            P09. Gera o PDF da monografia de cada ponto, a partir do banco e da estrutura de pastas, e grava em 8_Monografia. Usa modelo QPT do próprio plugin, sem LibreOffice.
+            P10. Gera o PDF da monografia de cada ponto, a partir da missão e da estrutura de pastas, e grava em 8_Monografia. Usa modelo QPT do próprio plugin, sem LibreOffice.
 
-            Antes: P08, vistas aéreas distribuídas.
-            Depois: P10, preparar os insumos do BPC.
+            Antes: P08 e P09, vistas aéreas e croqui digital já distribuídos.
+            Depois: P11, preparar os insumos do BPC.
 
             Atenção:
+            - Este é o ÚLTIMO passo da documentação do ponto, e é de propósito: ele consome o que o P08 e o P09 produziram. Rodar antes deles gera monografia com quadro em branco.
             - No ramo PPP, só gere monografia com órbita FINAL. Órbita rápida e ultra-rápida não valem. A final sai entre 11 e 20 dias depois da medição, conforme o fornecedor.
             - A orientação do modelo (paisagem ou retrato) segue a orientação em que o medidor tirou as fotos do ponto.
-            - Havendo croqui digital, ele tem prioridade sobre o croqui manual.
+            - Havendo croqui digital, ele tem prioridade sobre o croqui manual. É por isso que o P09 vem antes: rodado depois, o croqui digital não entra em monografia nenhuma.
             ''')
 
     def shortDescription(self):
         return self.tr(
-            'P09. Gera o PDF da monografia de cada ponto, a partir do banco e da estrutura de pastas, e grava em 8_Monografia. Usa modelo QPT do próprio plugin, sem LibreOffice.'
+            'P10. Gera o PDF da monografia de cada ponto, a partir da missão e da estrutura de pastas, e grava em 8_Monografia. Usa modelo QPT do próprio plugin, sem LibreOffice.'
         )
 
     def tr(self, s): return QCoreApplication.translate('Processing', s)

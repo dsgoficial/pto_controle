@@ -174,14 +174,14 @@ class FixDateTrimble(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('13 - Corrigir ToW para TRIMBLE')
+        return self.tr('Corrigir ToW para TRIMBLE')
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr("Gerenciar Pontos")
+        return self.tr("Auxiliares")
 
     def groupId(self):
         """
@@ -191,11 +191,13 @@ class FixDateTrimble(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return "gerenciamento"
+        return "auxiliares"
 
     def shortHelpString(self):
         return self.tr('''
-            P13. Corrige a data dos arquivos RINEX da coletora TRIMBLE R5700, cujo relógio estourou as 1024 semanas do Time of Week em 2023 e voltou a marcar 2004.
+            Auxiliar, SEM número. Corrige a data dos arquivos RINEX da coletora TRIMBLE R5700, cujo relógio estourou as 1024 semanas do Time of Week em 2023 e voltou a marcar 2004.
+
+            Por que não tem número: ela não é um posto do fluxo. Ela só existe para quem mediu com aquela coletora, e roda ANTES do P02, e não no fim. Numerada 13, como esteve até 2026-07-30, ela aparecia no fim de uma sequência cujo lugar dela é o começo.
 
             Quando usar: depois de gerar o RINEX e ANTES do P02. As datas dentro do RINEX precisam bater com a data do metadado do medidor, senão a validação reprova.
 
@@ -207,7 +209,7 @@ class FixDateTrimble(QgsProcessingAlgorithm):
 
     def shortDescription(self):
         return self.tr(
-            'P13. Corrige a data dos arquivos RINEX da coletora TRIMBLE R5700, cujo relógio estourou as 1024 semanas do Time of Week em 2023 e voltou a marcar 2004.'
+            'Auxiliar, sem número. Corrige a data dos arquivos RINEX da coletora TRIMBLE R5700, cujo relógio estourou as 1024 semanas do Time of Week em 2023 e voltou a marcar 2004. Roda antes do P02.'
         )
 
     def tr(self, string):

@@ -158,8 +158,62 @@ def _qgis4_config_path():
     return cand if os.path.isdir(os.path.join(cand, "profiles")) else None
 
 
-def call_qgis_process(args, stdin_text=None):
-    """Executa o qgis_process e retorna (returncode, stdout, stderr)."""
+def _raiz_do_qgis(qgis_process):
+    """A pasta de instalacao do QGIS, deduzida do caminho do qgis_process."""
+    if not qgis_process:
+        return None
+    return os.path.dirname(os.path.dirname(os.path.abspath(qgis_process)))
+
+
+def ambiente_de_layout(qgis_process):
+    """As variaveis que os passos de LAYOUT (P08, P09, P10) exigem headless.
+
+    Sao tres, e cada uma vem de um defeito medido. Antes de 2026-07-30 elas eram
+    conhecimento fora da banda: quem rodasse o P08 pelo CLI sem saber delas via a
+    imagem sair errada ou a monografia estourar a celula, sem nenhuma mensagem
+    dizendo o motivo. Isso quebra o padrao agent-first, que exige que o contrato
+    esteja NA ferramenta.
+
+    - `QT_QPA_PLATFORM=windows`: com `offscreen`, o Windows nao carrega a base de
+      fontes. Times New Roman vira uma substituta mais larga e o texto estoura as
+      celulas da monografia. So no Windows: em Linux o offscreen e o certo.
+    - `PROJ_DATA` e `GDAL_DATA` apontando para o `share/` do QGIS: um `proj.db` de
+      outra instalacao no PATH (o do PostgreSQL 18, no caso medido) sombreia o do
+      QGIS e a reprojecao passa a errar calada.
+
+    Devolve o dicionario a aplicar. Quem ja definiu a variavel no ambiente MANDA:
+    isto e padrao, e nao imposicao.
+    """
+    extra = {}
+    if sys.platform.startswith("win"):
+        extra["QT_QPA_PLATFORM"] = "windows"
+    raiz = _raiz_do_qgis(qgis_process)
+    if raiz:
+        # Os dois NAO ficam no mesmo lugar, e isso muda entre instalacoes. No QGIS
+        # 4.2.0 do Windows o proj esta em `share/proj` e o gdal em
+        # `apps/gdal/share/gdal`. Por isso a busca e por candidatos, e a chave so
+        # entra quando a pasta EXISTE: apontar PROJ_DATA para pasta inexistente e
+        # pior do que nao apontar, porque o proj para de achar o proprio banco.
+        candidatos = {
+            "PROJ_DATA": ("share/proj", "apps/proj/share/proj", "share/proj9"),
+            "GDAL_DATA": ("apps/gdal/share/gdal", "share/gdal"),
+        }
+        for chave, opcoes in candidatos.items():
+            for relativo in opcoes:
+                caminho = os.path.join(raiz, *relativo.split("/"))
+                if os.path.isdir(caminho):
+                    extra[chave] = caminho
+                    break
+    return extra
+
+
+def call_qgis_process(args, stdin_text=None, extra_env=None):
+    """Executa o qgis_process e retorna (returncode, stdout, stderr).
+
+    O `extra_env` traz o ambiente extra que ALGUNS passos exigem (ver
+    ambiente_de_layout). Ele entra por `setdefault`: quem definiu a variavel no
+    proprio ambiente continua mandando.
+    """
     qgis_process = find_qgis_process()
     if qgis_process is None:
         raise SystemExit(
@@ -171,6 +225,8 @@ def call_qgis_process(args, stdin_text=None):
         )
 
     env = dict(os.environ)
+    for chave, valor in (extra_env or {}).items():
+        env.setdefault(chave, valor)
     # Necessario para rodar sem servidor grafico (headless / servidores).
     env.setdefault("QT_QPA_PLATFORM", "offscreen")
     # Aponta o qgis_process para o perfil do QGIS 4 (ver _qgis4_config_path).
@@ -463,6 +519,23 @@ def _option_sort_key(item):
     return (int(key), "") if str(key).lstrip("-").isdigit() else (0, str(key))
 
 
+def _tem_padrao(param):
+    """O contrato traz um padrao UTILIZAVEL para este parametro?
+
+    String vazia NAO conta. Varios algoritmos deste plugin declaram
+    `defaultValue=''` em parametro de pasta ou de camada, e o motor nao consegue
+    fazer nada com isso: tratar como padrao valido deixaria passar a invocacao que
+    falharia adiante, com mensagem pior. O `"C:"` do P08 conta como padrao, e e
+    ruim por outro motivo, mas ai a escolha e de quem escreveu o algoritmo.
+    """
+    default = param.get("default_value")
+    if default is None:
+        return False
+    if isinstance(default, str) and not default.strip():
+        return False
+    return True
+
+
 def format_param(name, param, indent="  "):
     """Uma linha por parâmetro (mais continuacoes para padrão e opcoes)."""
     head = f"{indent}{name:<26} {_param_type(param):<10} {_param_marks(param):<22}"
@@ -534,8 +607,17 @@ def validate_inputs(inputs, help_data):
 
     # 2. Obrigatorio ausente. Vale também para saidas (sink/fileDestination): o
     # qgis_process não inventa destino temporario, ele aborta.
+    #
+    # Obrigatorio COM padrao no contrato não se cobra: o motor aplica o padrao
+    # sozinho quando a chave falta. Cobrar era ser mais estrito do que o motor sem
+    # ganho nenhum, e obrigava quem invoca a repetir 'dpi=300 escala_satelite=500'
+    # em todo comando, valores que o proprio contrato ja anuncia. Medido em
+    # 2026-07-30: o P09 tem dois parametros avancados assim, e a validacao local
+    # reprovava a invocacao minima que o motor aceitaria.
     for name, param in sorted(params.items(), key=_param_sort_key):
         if param.get("optional", False):
+            continue
+        if _tem_padrao(param) and not param.get("is_destination"):
             continue
         if name not in inputs or inputs[name] is None:
             errors.append({
@@ -745,6 +827,21 @@ def cmd_doctor(args):
     first = (out or err).strip().splitlines()
     print(f"  versao          : {first[0] if first else '??'} (exit {code})")
     print(f"  cache do contrato: {cache_dir()} ({_cache_counts()[0]} entrada(s) validas)")
+
+    # O ambiente EXTRA dos passos de layout (P08, P09, P10). O CLI o aplica
+    # sozinho, e o doctor o mostra porque, quando a monografia sai com texto
+    # estourando a celula ou a reprojecao erra, e aqui que se olha primeiro.
+    extra = ambiente_de_layout(qp)
+    if extra:
+        print("  ambiente dos passos de layout (aplicado so no P08, P09 e P10):")
+        for chave in sorted(extra):
+            fixado = os.environ.get(chave)
+            origem = ' (ja fixado no ambiente, este manda)' if fixado else ''
+            print(f"    {chave} = {fixado or extra[chave]}{origem}")
+    else:
+        print("  ambiente dos passos de layout: NADA A APLICAR")
+        print("    sem o share/proj e o share/gdal ao lado do qgis_process, um proj.db")
+        print("    de outra instalacao no PATH pode sombrear o do QGIS.")
 
     problems = _check_provider(qp, fix=args.fix)
     if problems:
@@ -996,7 +1093,18 @@ def cmd_run(args):
         return 0
 
     payload = json.dumps({"inputs": inputs})
-    code, out, err = call_qgis_process(["run", alg, "-"], stdin_text=payload)
+    # O passo que monta LAYOUT precisa de tres variaveis de ambiente proprias (ver
+    # ambiente_de_layout). Quem decide se este e um desses passos e o GRUPO do
+    # contrato vivo, e nao uma lista de ids escrita aqui: lista copiada apodrece no
+    # dia em que outro passo de layout entrar.
+    extra_env = None
+    if (help_data or {}).get("group", "").lower().find("documentar") >= 0:
+        extra_env = ambiente_de_layout(find_qgis_process())
+        if extra_env:
+            print("Passo de layout: aplicando " + ", ".join(sorted(extra_env)),
+                  file=sys.stderr)
+    code, out, err = call_qgis_process(["run", alg, "-"], stdin_text=payload,
+                                       extra_env=extra_env)
     data = _parse_json_stdout(out)
 
     if args.raw or data is None:

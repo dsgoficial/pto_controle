@@ -278,11 +278,14 @@ class PrepareToSCA(QgsProcessingAlgorithm):
             if lon is None or lat is None:
                 continue
 
+            # O filtro `startswith('endereco_')` saiu em 2026-07-30, junto com as
+            # oito colunas que ele descartava. Se elas voltarem, o alarme não é
+            # aqui: o Controle do Acervo compara o manifesto com as COLUNAS VIVAS
+            # da tabela dele e RELATA o que descartou.
             atributos = {
                 chave: valor
                 for chave, valor in dados.items()
                 if chave not in FORA_DO_MANIFESTO
-                and not chave.startswith('endereco_')
                 and valor not in (None, '')
             }
             registros.append({
@@ -297,19 +300,19 @@ class PrepareToSCA(QgsProcessingAlgorithm):
         return 'prepararsca'
 
     def displayName(self):
-        return self.tr('17 - Preparar a missão para o Controle do Acervo')
+        return self.tr('12 - Preparar a missão para o Controle do Acervo')
 
     def group(self):
-        return self.tr('Pós-processamento')
+        return self.tr('4. Entregar')
 
     def groupId(self):
-        return 'posprocessamento'
+        return 'entrega'
 
     def shortHelpString(self):
         return self.tr('''
-            P17. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: o manifesto.json, o GeoPackage da missão e, por ponto, DOIS arquivos: o pacote zipado e a monografia.
+            P12. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: o manifesto.json, o GeoPackage da missão e, por ponto, DOIS arquivos: o pacote zipado e a monografia.
 
-            Antes: a missão toda validada, e o P03 já rodado. Peça ao Controle do Acervo o id do LOTE, que é como a missão é identificada lá.
+            Antes: a missão toda validada, e o P03 já rodado. Peça ao Controle do Acervo o id do LOTE, que é como a missão é identificada lá. É um dos dois passos de ENTREGA, e o outro é o P11. Os dois leem a mesma missão pronta, não se falam, e a ordem entre eles é livre.
             Depois: a importação no Controle do Acervo, em duas fases.
 
             Como importar, depois de rodar este passo:
@@ -322,8 +325,8 @@ class PrepareToSCA(QgsProcessingAlgorithm):
             - o zip guarda o caminho relativo, então a estrutura de subpastas atravessa inteira;
             - nenhum arquivo precisa ser renomeado para caber num nome só por ponto.
 
-            Diferença para o P10, que prepara o pacote do BPC:
-            - o P10 leva quatro arquivos por ponto, renomeados, só de órbita FINAL e sem ponto base;
+            Diferença para o P11, que prepara o pacote do BPC:
+            - o P11 leva quatro arquivos por ponto, renomeados, só de órbita FINAL e sem ponto base;
             - este leva a pasta inteira de cada ponto, sem filtro nenhum.
 
             Tamanho, medido na amostra do repositório (4 pontos):
@@ -341,7 +344,7 @@ class PrepareToSCA(QgsProcessingAlgorithm):
 
     def shortDescription(self):
         return self.tr(
-            'P17. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: manifesto.json, o GeoPackage e, por ponto, o pacote zipado mais a monografia.'
+            'P12. Monta o pacote COMPLETO da missão para importação no Controle do Acervo: manifesto.json, o GeoPackage e, por ponto, o pacote zipado mais a monografia.'
         )
 
     def tr(self, string):

@@ -13,20 +13,13 @@
     "em 2026-07-28. Algoritmo sem exemplo e algoritmo cujo contrato ainda nao foi",
     "lido do plugin carregado: nao invente, rode `describe <id>` e copie de la."
   ],
-  "ptocontrole:corrigirdatatrimble": {
-    "constraints": [
-      "Roda ANTES da validacao de estrutura (validarestrutura), nao depois: as datas do RINEX precisam bater com a data do metadado do medidor.",
-      "A substituicao do RINEX errado pelo corrigido dentro da estrutura de pastas e MANUAL. O algoritmo escreve numa pasta de saida separada.",
-      "A TRIMBLE encerrou em 2024 o suporte de hardware que re-zerava o ToW."
-    ]
-  },
   "ptocontrole:criarbanco": {
     "constraints": [
       "Desde 2026-07-28 cria um GeoPackage, e nao mais um banco PostGIS. Nao exige PostgreSQL nem PostGIS.",
       "Arquivo existente NAO e sobrescrito. A rotina nao apaga nada.",
       "O arquivo e copia da semente versionada em createDB/missao_semente.gpkg, derivada do new_db.sql. Se alguem mexer no schema e nao regerar a semente, a rotina RECUSA criar e diz o comando do conserto.",
       "A chave estrangeira do GeoPackage e da CONEXAO, e nao do servidor: so vale com PRAGMA foreign_keys=ON. As rotinas do plugin ligam. Editar o atributo a mao pela tabela do QGIS nao liga, e ali da para gravar codigo de dominio inexistente.",
-      "A missao sai com 19 tabelas e 98 codigos de dominio semeados, e ocupa cerca de 236 KB vazia."
+      "A missao sai com 16 tabelas e 98 codigos de dominio semeados, e ocupa cerca de 220 KB vazia. A camada de ponto tem 63 colunas: as oito endereco_* sairam em 2026-07-30, junto com os dois algoritmos que as usavam."
     ],
     "example": {
       "SAIDA": "D:\\missoes\\missao_2022-07-03.gpkg"
@@ -40,6 +33,7 @@
       "O objeto 'default' do JSON e opcional, mas e onde se fixa o padrao do projeto. Quando a mesma chave aparece no JSON e no CSV do medidor, o CSV VENCE.",
       "modelo_gps e modelo_antena sao obrigatorios para o carregamento no BPC. Estacao sem modelo de antena repete o valor do modelo_gps.",
       "So se segue para o passo seguinte com a mensagem 'A pasta [...] nao contem erros.'",
+      "A pasta 4_Croqui passa com o croqui MANUAL (<PONTO>_CROQUI) ou com o DIGITAL (<PONTO>_CROQUI_DIGITAL), ou com os dois. Nenhum dos dois e obrigatorio isoladamente.",
       "Projeto com mais de um tipo de estacao (TOPCON, TRIMBLE, Spectra, Ruide) separa as pastas por estacao, porque o JSON padrao muda por estacao.",
       "OPERATORS aceita varios operadores separados por ponto e virgula, e casa com o prefixo da pasta 'medidor_AAAA-MM-DD'.",
       "ESTACAO e enum por indice: 0=TOPCON, 1=TRIMBLE. Confira no describe, porque a lista pode crescer.",
@@ -62,7 +56,8 @@
       "Usa a mesma pasta e o mesmo JSON da validacao de estrutura.",
       "Grava tipo_situacao_id como 'Aguardando Revisao'.",
       "Comprime e reamostra as fotos de 3_Foto_Rastreio para jpeg, APAGANDO a pasta original e renomeando a nova. Exige a biblioteca Pillow no Python do QGIS.",
-      "Conferir o objeto 'default' do JSON antes de rodar: e ele que preenche o que o CSV do medidor nao traz."
+      "Conferir o objeto 'default' do JSON antes de rodar: e ele que preenche o que o CSV do medidor nao traz.",
+      "possui_croqui conta o croqui manual E o digital, desde 2026-07-30. Antes so o manual, e o ponto documentado so com croqui digital ia ao BPC declarado sem croqui."
     ]
   },
   "ptocontrole:prepararprocessamento": {
@@ -85,63 +80,51 @@
   },
   "ptocontrole:distribuirvistas": {
     "constraints": [
-      "Exige QGIS 3.34 ou superior.",
-      "A camada de pontos vem do banco (PostGIS, tipicamente ponto_controle_p) e precisa da coluna cod_ponto preenchida.",
-      "Use as malhas municipal e estadual do IBGE, para padronizar.",
-      "As tres escalas sao parametros avancados e tem valor padrao."
-    ]
-  },
-  "ptocontrole:distribuirmonografia": {
-    "constraints": [
-      "No PPP, so gere monografia com orbita FINAL. Orbita rapida e ultra-rapida nao valem. A final sai entre 11 e 20 dias depois da medicao, conforme o fornecedor (NRCan ou IGS).",
-      "A orientacao do modelo (paisagem ou retrato) segue a orientacao em que o medidor tirou as fotos do ponto.",
-      "O script generateMonograpy.py das rotinas complementares esta DEPRECIADO: a geracao passou para dentro do QGIS.",
-      "O branch 'monograpy' saiu do GitHub em 2026-07-28. O historico dele esta no main."
-    ]
-  },
-  "ptocontrole:prepararbpc": {
-    "constraints": [
-      "A pasta de entrada precisa de um CSV com a coluna cod_ponto, listando os pontos que vao ao BPC.",
-      "Chama o ogr2ogr por subprocesso: ele tem de estar no PATH.",
-      "O carregamento em si e MANUAL e fora do plugin: SFTP dos .zip para /home/sigweb/repositorio/Transferencia, depois 'Adicionar Geopackage' na pagina web do BPC.",
-      "Cada Centro de Geoinformacao tem credencial propria do SFTP."
-    ]
-  },
-  "ptocontrole:caminhosnosatributos": {
-    "constraints": [
-      "Roda depois de a estrutura de pastas estar completa, senao grava caminho para arquivo que nao existe.",
-      "E o passo que habilita o baixararquivos (P12), que le esses caminhos."
-    ]
-  },
-  "ptocontrole:baixararquivos": {
-    "constraints": [
-      "So baixa os pontos SELECIONADOS na camada no canvas do QGIS. Sem selecao, nao baixa nada.",
-      "Essa dependencia de selecao interativa e o motivo de este algoritmo ser o de uso mais duvidoso headless."
+      "A camada de pontos e a ponto_controle_p do GeoPackage da missao, e precisa da coluna cod_ponto preenchida.",
+      "As malhas municipal e estadual vem DENTRO do plugin, ja simplificadas. So preencha os parametros avancados de estados e municipios para usar outra malha.",
+      "A vista municipal e a estadual enquadram a feicao que contem o ponto, e nao tem escala fixa. So a vista aerea tem escala fixa.",
+      "Cobre tambem a pasta BASE, com QUATRO letras no tipo (SC-BASE-1), desde 2026-07-30. Antes o regex exigia duas e o ponto base ficava sem vista nenhuma, calado."
     ]
   },
   "ptocontrole:distribuircroqui": {
     "constraints": [
       "Parte da camada de pontos do croqui (arquivos/pontos_croqui.gpkg), que ja traz o estilo padrao. O ponto se digitaliza sobre imagem de fundo.",
       "A tabela de atributos precisa de cod_ponto, data_posicionamento e operador: e dai que o layout se preenche sozinho. 'observacao' e opcional.",
-      "cod_ponto no padrao UF-HV-XXXX, sem zero a esquerda.",
-      "A escala e parametro avancado, padrao 500 (1:500).",
-      "Monta atlas de layout em QgsProject.instance() e troca o estilo da camada durante a execucao. E, com o distribuirmonografia, o par de maior risco headless.",
-      "Havendo croqui digital, ele tem prioridade sobre o croqui manual."
+      "cod_ponto no padrao UF-HV-XXXX, sem zero a esquerda. A pasta BASE tambem entra, com QUATRO letras no tipo.",
+      "Roda ANTES do distribuirmonografia, que usa o croqui digital com PRIORIDADE sobre o manual. Numerado 15, como esteve ate 2026-07-30, ele rodava depois do PDF gerado e o croqui digital nao entrava em documento nenhum.",
+      "A escala e o DPI sao parametros avancados, com padrao 500 (1:500) e 300.",
+      "Monta atlas de layout em QgsProject.instance() e troca o estilo da camada durante a execucao."
     ]
   },
-  "ptocontrole:compactarpastas": {
+  "ptocontrole:distribuirmonografia": {
     "constraints": [
-      "A pagina compactar_pto_controle.md do manual descreve, por engano de copia, o objetivo do P14 (buraco na numeracao). Vale o codigo, nao aquela pagina."
+      "Ultimo passo da documentacao do ponto: consome o que o distribuirvistas e o distribuircroqui produziram. Rodado antes deles, gera monografia com quadro em branco.",
+      "No PPP, so gere monografia com orbita FINAL. Orbita rapida e ultra-rapida nao valem. A final sai entre 11 e 20 dias depois da medicao, conforme o fornecedor (NRCan ou IGS).",
+      "A orientacao do modelo (paisagem ou retrato) segue a orientacao em que o medidor tirou as fotos do ponto.",
+      "Havendo croqui digital, ele tem prioridade sobre o croqui manual.",
+      "A geracao vive dentro do QGIS, por modelo QPT. O generateMonograpy.py em LibreOffice esta descontinuado, e o branch 'monograpy' saiu do GitHub em 2026-07-28."
+    ]
+  },
+  "ptocontrole:prepararbpc": {
+    "constraints": [
+      "A pasta de entrada precisa de um CSV com a coluna cod_ponto, listando os pontos que vao ao BPC.",
+      "A exportacao e feita pelo proprio plugin desde 2026-07-28: NAO exige mais o ogr2ogr no PATH.",
+      "No ramo PPP so entram os pontos com orbita FINAL, e o ponto com BASE no codigo e descartado. Ponto filtrado fica de fora em silencio, mesmo estando no CSV.",
+      "O carregamento em si e MANUAL e fora do plugin: SFTP dos .zip para /home/sigweb/repositorio/Transferencia, depois 'Adicionar Geopackage' na pagina web do BPC.",
+      "Cada Centro de Geoinformacao tem credencial propria do SFTP.",
+      "E um dos dois passos de ENTREGA. O outro e o prepararsca, que leva a missao INTEIRA, sem esses filtros. A ordem entre os dois e livre."
     ]
   },
   "ptocontrole:prepararsca": {
     "constraints": [
       "Peca o id do LOTE ao Controle do Acervo antes de rodar: a missao E um lote de um projeto la, e o manifesto nao se monta sem ele.",
       "Rode DEPOIS do P03. Antes dele as fotos ainda estao no tamanho original, e o pacote fica tres vezes maior.",
+      "Gera, por ponto, DOIS arquivos (desde 2026-07-29): <cod>_pacote.zip com a pasta inteira menos a monografia, e <cod>.pdf com a monografia. Sao os dois unicos downloads que a tela do acervo oferece.",
+      "O caminho DENTRO do zip e o relativo a pasta do ponto, entao a estrutura de subpastas atravessa. Dois arquivos de mesmo nome em subpastas diferentes nao colidem mais, e nada precisa ser renomeado.",
       "A importacao no acervo tem duas fases: prepare-upload/missao com o manifesto.json, a copia dos arquivos para os caminhos que a resposta indicar, e confirm-upload. O servidor recalcula o SHA-256 no volume.",
-      "Nao gera mais um zip por ponto (mudou em 2026-07-28). O acervo registra arquivo a arquivo, com tipo proprio e limite por ponto.",
-      "O passo PARA se algum cod_ponto nao servir ao acervo (UF-HV-N ou UF-BASE-N, maiusculas, sem zero a esquerda) ou se dois arquivos do mesmo ponto tiverem o mesmo nome em subpastas diferentes.",
-      "Arquivo fora da estrutura de subpastas conhecida nao entra no manifesto, e sai na lista de avisos."
+      "O passo PARA se algum cod_ponto nao servir ao acervo (UF-HV-N ou UF-BASE-N, maiusculas, sem zero a esquerda) ou se a pasta 8_Monografia tiver mais de um PDF.",
+      "Ponto sem monografia entra so com o pacote, e aparece na lista de avisos.",
+      "E um dos dois passos de ENTREGA. O outro e o prepararbpc. A ordem entre os dois e livre."
     ],
     "example": {
       "FOLDERIN": "D:\\missoes\\missao_2026-07-03",
@@ -149,5 +132,13 @@
       "LOTE": 42,
       "FOLDEROUT": "D:\\missoes\\pacote_sca"
     }
+  },
+  "ptocontrole:corrigirdatatrimble": {
+    "constraints": [
+      "Auxiliar, SEM numero no rotulo, desde 2026-07-30: ela nao e um posto do fluxo, e so existe para quem mediu com a coletora TRIMBLE R5700.",
+      "Roda ANTES da validacao de estrutura (validarestrutura), nao depois: as datas do RINEX precisam bater com a data do metadado do medidor.",
+      "A substituicao do RINEX errado pelo corrigido dentro da estrutura de pastas e MANUAL. O algoritmo escreve numa pasta de saida separada.",
+      "A TRIMBLE encerrou em 2024 o suporte de hardware que re-zerava o ToW."
+    ]
   }
 }

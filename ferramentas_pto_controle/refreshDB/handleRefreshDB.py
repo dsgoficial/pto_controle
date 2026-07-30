@@ -119,7 +119,13 @@ class HandleRefreshDB():
         return resumo, avisos
 
     def getAdditionalInfo(self, point):
-        croqui = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '4_Croqui' and x.match('*{}_CROQUI.*'.format(point['cod_ponto']))]
+        # O prefixo, e nao o nome exato: o croqui DIGITAL e
+        # <cod>_CROQUI_DIGITAL.jpg, e o padrao '*<cod>_CROQUI.*' nao casava com
+        # ele. Ponto documentado so com croqui digital ia ao BPC declarado com
+        # possui_croqui FALSE, sem erro na tela. O P02 sempre aceitou os dois.
+        croqui = [x for x in self.pasta.rglob('*')
+                  if x.is_file() and x.parent.name == '4_Croqui'
+                  and x.stem.startswith('{}_CROQUI'.format(point['cod_ponto']))]
         arq_rastreio = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '1_Formato_Nativo' and x.match('*{}.*'.format(point['cod_ponto']))]
         fotos = [x for x in self.pasta.rglob('*') if x.is_file() and x.parent.name == '3_Foto_Rastreio' and x.match('{}*_FOTO.*'.format(point['cod_ponto']))]
         return len(croqui), len(arq_rastreio), len(fotos)

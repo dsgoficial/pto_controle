@@ -15,7 +15,7 @@ O que a tradução faz, e por quê:
 
 - `dominios.X` vira `dominios_X` e `bpc.X` vira `X`. GeoPackage não tem schema.
   O prefixo `bpc.` cai porque é ele que dá o nome das CAMADAS que o usuário vê no
-  QGIS, e `ponto_controle_p` é o nome que os algoritmos P08, P14 e P15 já esperam.
+  QGIS, e `ponto_controle_p` é o nome que os algoritmos P08 e P09 já esperam.
 - `SERIAL NOT NULL PRIMARY KEY` vira `INTEGER PRIMARY KEY AUTOINCREMENT`, que é o
   que o GDAL reconhece como identificador de feição.
 - `VARCHAR(n)` vira `TEXT`. O GDAL avisa "Field format 'VARCHAR(255)' not

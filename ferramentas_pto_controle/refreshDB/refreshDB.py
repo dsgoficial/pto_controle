@@ -113,14 +113,14 @@ class RefreshDB(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('03 - Atualizar banco de dados')
+        return self.tr('03 - Atualizar a missão')
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr("Pré-processamento")
+        return self.tr("1. Preparar a missão")
 
     def groupId(self):
         """
@@ -130,11 +130,11 @@ class RefreshDB(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return "preprocessamento"
+        return "preparacao"
 
     def shortHelpString(self):
         return self.tr('''
-            P03. Varre as subpastas, lê os RINEX de medição e carrega o banco. Ainda com dado NÃO processado, antes do PPP ou do RTE.
+            P03. Varre as subpastas, lê os RINEX de medição e carrega a missão. Ainda com dado NÃO processado, antes do PPP ou do RTE.
 
             Antes: P02 retornando zero erro. Use a mesma pasta e o mesmo JSON.
             Depois: P04, preparar para processamento.
@@ -150,7 +150,7 @@ class RefreshDB(QgsProcessingAlgorithm):
 
     def shortDescription(self):
         return self.tr(
-            'P03. Varre as subpastas, lê os RINEX de medição e carrega o banco. Ainda com dado NÃO processado, antes do PPP ou do RTE.'
+            'P03. Varre as subpastas, lê os RINEX de medição e carrega a missão. Ainda com dado NÃO processado, antes do PPP ou do RTE.'
         )
 
     def tr(self, string):

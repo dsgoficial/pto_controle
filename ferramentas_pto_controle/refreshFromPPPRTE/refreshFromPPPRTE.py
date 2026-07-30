@@ -111,14 +111,14 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('07 - Atualizar banco com dados do PPP/RTE')
+        return self.tr('07 - Atualizar a missão com dados do PPP/RTE')
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr("Pós-processamento")
+        return self.tr("2. Incorporar o processamento")
 
     def groupId(self):
         """
@@ -128,11 +128,11 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return "posprocessamento"
+        return "processamento"
 
     def shortHelpString(self):
         return self.tr('''
-            P07. Carrega no banco o resultado do processamento. É onde os ramos PPP e RTE convergem.
+            P07. Carrega na missão o resultado do processamento. É onde os ramos PPP e RTE convergem.
 
             Antes: P06 (ramo PPP), ou o processamento_rte.csv preenchido (ramo RTE).
             Depois: P08, distribuir as vistas aéreas.
@@ -152,7 +152,7 @@ class RefreshFromPPPRTE(QgsProcessingAlgorithm):
 
     def shortDescription(self):
         return self.tr(
-            'P07. Carrega no banco o resultado do processamento. É onde os ramos PPP e RTE convergem.'
+            'P07. Carrega na missão o resultado do processamento. É onde os ramos PPP e RTE convergem.'
         )
 
     def tr(self, string):

@@ -283,14 +283,11 @@ CREATE TABLE bpc.ponto_controle_p(
   numero_fotos SMALLINT,
   possui_croqui BOOLEAN NOT NULL DEFAULT FALSE,
   possui_arquivo_rastreio BOOLEAN NOT NULL DEFAULT FALSE,
-  endereco_imagem_lateral_1 VARCHAR(255),
-  endereco_imagem_lateral_2 VARCHAR(255),
-  endereco_imagem_lateral_3 VARCHAR(255),
-  endereco_imagem_lateral_4 VARCHAR(255),
-  endereco_imagem_aerea VARCHAR(255),
-  endereco_monografia VARCHAR(255),
-  endereco_croqui VARCHAR(255),
-  endereco_rinex VARCHAR(255),
+  -- As oito colunas endereco_* saíram em 2026-07-30, junto com o P11, que era o
+  -- único que as escrevia, e com o P12, que era o único que as lia. Elas
+  -- guardavam CAMINHO ABSOLUTO na máquina do medidor, então nunca serviram a
+  -- outra máquina. O P12 do Controle do Acervo já as descartava, e o P11 do BPC
+  -- nunca as leu.
   geom geometry(POINT,4674) NOT NULL
 );
 CREATE INDEX ponto_controle_p_geom ON bpc.ponto_controle_p USING gist (geom);
